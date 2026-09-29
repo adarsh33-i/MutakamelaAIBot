@@ -1,0 +1,56 @@
+=== HOW TO CREATE PIVOT TABLES FOR QUESTION 3 ===
+
+Open FDS_Assignment_Solution.xlsx in Excel, then follow these steps:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PIVOT TABLE 1: Salesperson Count (Q3.1)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Go to "Data" sheet
+2. Select cells A1:H25 (all data with headers)
+3. Click INSERT tab → PivotTable
+4. Choose "New Worksheet" or "Existing Worksheet" (Q3-PivotAnalysis)
+5. Click OK
+
+6. In PivotTable Fields panel (right side):
+   • Drag "Salesperson" to ROWS area
+   • Drag "Item" to VALUES area (shows "Count of Item")
+
+7. Look for the salesperson with count = 2
+   → ANSWER: Christopher Cresswell
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PIVOT TABLE 2: Item Max/Min Prices (Q3.2 & Q3.3)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Go to "Data" sheet again
+2. Select cells A1:H25
+3. Click INSERT tab → PivotTable
+4. Choose location below Pivot Table 1
+5. Click OK
+
+6. In PivotTable Fields panel:
+   • Drag "Item" to ROWS area
+   • Drag "List Price" to VALUES area twice
+   • Drag "Actual Price" to VALUES area twice
+
+7. Change Value Field Settings:
+   • Click on "Sum of List Price" → Value Field Settings → MAX
+   • Click on "Sum of List Price2" → Value Field Settings → MIN
+   • Click on "Sum of Actual Price" → Value Field Settings → MAX
+   • Click on "Sum of Actual Price2" → Value Field Settings → MIN
+
+8. Compare Max and Min for each item:
+   → Q3.2 ANSWER: 0 items differ in List Price
+   → Q3.3 ANSWER: 7 items differ in Actual Price
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ANSWERS SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Q3.1: Christopher Cresswell (sold 2 items)
+Q3.2: 0 items have different Max/Min List Price  
+Q3.3: 7 items have different Max/Min Actual Price
+      (Air conditioner, Ceiling fan, Iron, Microwave, 
+       Oven, Refrigerator, Washing Machine)
+

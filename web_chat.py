@@ -816,7 +816,7 @@ CHAT_HTML = '''
                     Online
                 </div>
                 <div class="lang-toggle">
-                    <button class="lang-btn" onclick="startNewChat()" title="New Chat" style="padding: 6px 10px;">
+                    <button class="lang-btn new-chat-action" onclick="startNewChat()" title="New Chat" data-i18n-title="newChat" style="padding: 6px 10px;">
                         <i class="fas fa-redo"></i>
                     </button>
                     <button class="lang-btn active" data-language="en" onclick="setLang('en', this)">EN</button>
@@ -843,34 +843,34 @@ CHAT_HTML = '''
         </div>
 
         <div class="category-section">
-            <div class="category-label">Quick Options</div>
+            <div class="category-label" data-i18n="quickOptions">Quick Options</div>
             <div class="category-buttons">
                 <button class="category-btn motor" onclick="handleCategoryClick(event, 'I need motor insurance')">
                     <div class="icon-bg"><i class="fas fa-car icon"></i></div>
-                    <span class="label">Motor</span>
+                    <span class="label" data-i18n="motor">Motor</span>
                 </button>
                 <button class="category-btn health" onclick="handleCategoryClick(event, 'I need health insurance')">
                     <div class="icon-bg"><i class="fas fa-heartbeat icon"></i></div>
-                    <span class="label">Health</span>
+                    <span class="label" data-i18n="health">Health</span>
                 </button>
                 <button class="category-btn travel" onclick="handleCategoryClick(event, 'I need travel insurance')">
                     <div class="icon-bg"><i class="fas fa-plane icon"></i></div>
-                    <span class="label">Travel</span>
+                    <span class="label" data-i18n="travel">Travel</span>
                 </button>
                 <button class="category-btn property" onclick="handleCategoryClick(event, 'I need property insurance')">
                     <div class="icon-bg"><i class="fas fa-home icon"></i></div>
-                    <span class="label">Property</span>
+                    <span class="label" data-i18n="property">Property</span>
                 </button>
                 <button class="category-btn claims" onclick="handleCategoryClick(event, 'I want to file a claim')">
                     <div class="icon-bg"><i class="fas fa-file-alt icon"></i></div>
-                    <span class="label">Claims</span>
+                    <span class="label" data-i18n="claims">Claims</span>
                 </button>
             </div>
         </div>
 
         <div class="chat-input">
-            <input type="text" id="messageInput" placeholder="Type your message..." onkeypress="handleKeyPress(event)">
-            <button class="send-btn" onclick="sendMessage()">
+            <input type="text" id="messageInput" placeholder="Type your message..." data-i18n-placeholder="messagePlaceholder" onkeypress="handleKeyPress(event)">
+            <button class="send-btn" onclick="sendMessage()" title="Send message" data-i18n-title="sendMessage" aria-label="Send message">
                 <i class="fas fa-paper-plane"></i>
             </button>
         </div>
@@ -881,7 +881,7 @@ CHAT_HTML = '''
                 <path d="M25.413 5.40541L24.6408 5.01931C14.8378 1.18147 11.8185 35.6023 19.5752 34.834C24.6563 34.3282 41.6563 32.3475 43.6795 26.7259C44.6177 22.3668 29.7528 7.53668 25.413 5.40541Z" fill="#2E289E"/>
             </svg>
             Powered by Mutakamela AI • <a href="https://mutakamela.sa" target="_blank">mutakamela.sa</a>
-            <button class="theme-toggle" onclick="toggleDarkMode()" title="Toggle Dark Mode">
+            <button class="theme-toggle" onclick="toggleDarkMode()" title="Toggle Dark Mode" data-i18n-title="toggleTheme">
                 <i class="fas fa-moon"></i>
             </button>
         </div>
@@ -909,18 +909,61 @@ CHAT_HTML = '''
 
         let currentLang = localStorage.getItem('mutakamela_lang') || 'en';
         let darkMode = localStorage.getItem('mutakamela_dark') === 'true';
+        const apiBaseUrl = {{ api_base_url | tojson }};
         let conversationHistory = [];
         let displayHistory = [];
         let messageInFlight = false;
         let audioContext = null;
+        const interfaceText = {
+            en: {
+                quickOptions: 'Quick Options', motor: 'Motor', health: 'Health', travel: 'Travel',
+                property: 'Property', claims: 'Claims', messagePlaceholder: 'Type your message...',
+                newChat: 'New Chat', sendMessage: 'Send message', toggleTheme: 'Toggle Dark Mode'
+            },
+            ar: {
+                quickOptions: 'خيارات سريعة', motor: 'المركبات', health: 'الصحي', travel: 'السفر',
+                property: 'الممتلكات', claims: 'المطالبات', messagePlaceholder: 'اكتب رسالتك...',
+                newChat: 'محادثة جديدة', sendMessage: 'إرسال الرسالة', toggleTheme: 'تبديل المظهر الداكن'
+            }
+        };
 
         function normalizeStoredMessages(messages, allowedRoles, maximum) {
             if (!Array.isArray(messages)) return [];
             return messages
                 .filter(item => item && allowedRoles.includes(item.role) && typeof item.content === 'string')
-                .map(item => ({ role: item.role, content: item.content.slice(0, 4000) }))
+                .map(item => {
+                    const content = item.content.slice(0, 4000).split(String.fromCharCode(10))
+                        .filter((line, index, lines) => index === 0 || line.trim() !== lines[index - 1].trim())
+                        .join(String.fromCharCode(10));
+                    const normalized = { role: item.role, content };
+                    if (item.role === 'assistant') {
+                        const storedStage = typeof item.stage === 'string' ? item.stage.toUpperCase() : '';
+                        normalized.stage = validChatStages.has(storedStage) ? storedStage : inferStoredStage(normalized.content);
+                        normalized.isClaims = item.isClaims === true || /claim.*hotline|hotline.*claim/i.test(normalized.content);
+                        normalized.isComplete = item.isComplete === true || normalized.stage === 'COMPLETE';
+                        if (typeof item.retryMessage === 'string') normalized.retryMessage = item.retryMessage.slice(0, 4000);
+                    }
+                    return normalized;
+                })
                 .filter(item => item.content.trim())
                 .slice(-maximum);
+        }
+
+        const validChatStages = new Set([
+            'IDENTIFY', 'RECOMMEND', 'DETAILS', 'CONFIRM', 'COMPLETE',
+            'CLAIM_EDIT', 'CLAIM_EDIT_VALUE', 'CLAIM_INTAKE', 'CLAIM_CONFIRM', 'CLAIM_COMPLETE'
+        ]);
+
+        function inferStoredStage(content) {
+            const text = content.toLowerCase();
+            if (text.includes('claim draft summary') || text.includes('ملخص مسودة المطالبة')) return 'CLAIM_CONFIRM';
+            if (text.includes('claim draft is ready') || text.includes('مسودة المطالبة جاهزة')) return 'CLAIM_COMPLETE';
+            if (text.includes('which detail would you like to edit') || text.includes('ما المعلومة التي ترغب في تعديلها')) return 'CLAIM_EDIT';
+            if (text.includes('this chat can explain insurance products') || text.includes('يمكن لهذه المحادثة شرح منتجات التأمين')) return 'CONFIRM';
+            if (text.includes('ready to proceed') || text.includes('مستعد للمتابعة')) return 'DETAILS';
+            if (text.includes('would you like more details')) return 'RECOMMEND';
+            if (text.includes('thank you for choosing')) return 'COMPLETE';
+            return '';
         }
 
         function migrateLegacyChat(markup) {
@@ -934,7 +977,10 @@ CHAT_HTML = '''
                 if (!content || content.startsWith('Welcome to Mutakamela Insurance!')) return [];
                 return [{ role: message.classList.contains('user') ? 'user' : 'assistant', content }];
             });
-            return { conversation: messages.slice(-20), messages: messages.slice(-50) };
+            return {
+                conversation: normalizeStoredMessages(messages, ['user', 'assistant'], 20),
+                messages: normalizeStoredMessages(messages, ['user', 'assistant'], 50)
+            };
         }
 
         function readSavedChat(storageKey) {
@@ -971,7 +1017,12 @@ CHAT_HTML = '''
             displayHistory = saved.messages;
             displayHistory.forEach(message => addMessage(message.content, message.role === 'user', {
                 persist: false,
-                plainText: true
+                plainText: true,
+                stage: message.stage,
+                isClaims: message.isClaims,
+                isComplete: message.isComplete,
+                retryMessage: message.retryMessage,
+                restoreActions: true
             }));
             saveChatHistory();
             if (legacySessionId) localStorage.removeItem('mutakamela_chat_' + legacySessionId);
@@ -988,8 +1039,96 @@ CHAT_HTML = '''
             document.querySelectorAll('[data-language]').forEach(button => {
                 button.classList.toggle('active', button.dataset.language === currentLang);
             });
+            applyLanguage();
             loadChatHistory();
         });
+
+        function applyLanguage() {
+            const labels = interfaceText[currentLang];
+            document.querySelectorAll('[data-i18n]').forEach(element => {
+                element.textContent = labels[element.dataset.i18n];
+            });
+            document.querySelectorAll('[data-i18n-title]').forEach(element => {
+                element.title = labels[element.dataset.i18nTitle];
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
+                element.placeholder = labels[element.dataset.i18nPlaceholder];
+            });
+            document.documentElement.lang = currentLang;
+            document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+        }
+
+        function getActionLabels(language) {
+            return language === 'ar'
+                ? {
+                    moreDetails: 'تفاصيل أكثر', comparePlans: 'مقارنة الخطط الأخرى',
+                    continuePlan: 'المتابعة بهذه الخطة', askQuestion: 'طرح سؤال',
+                    contact: 'تواصل مع متكاملة', confirmDraft: 'تأكيد المسودة',
+                    editDetails: 'تعديل التفاصيل', submit: 'التقديم عبر متكاملة',
+                    newClaim: 'مسودة مطالبة جديدة', anotherProduct: 'منتج آخر',
+                    startOver: 'بدء محادثة جديدة', retry: 'إعادة المحاولة'
+                }
+                : {
+                    moreDetails: 'More details', comparePlans: 'Compare other plans',
+                    continuePlan: 'Continue with this plan', askQuestion: 'Ask a question',
+                    contact: 'Contact Mutakamela', confirmDraft: 'Confirm draft',
+                    editDetails: 'Edit details', submit: 'Submit through Mutakamela',
+                    newClaim: 'New claim draft', anotherProduct: 'Another product',
+                    startOver: 'Start over', retry: 'Retry'
+                };
+        }
+
+        function buildStageActions(stage, isClaims, isComplete, language) {
+            const labels = getActionLabels(language);
+            let actions = [];
+
+            if (!isClaims && stage === 'RECOMMEND') {
+                actions = [
+                    { icon: 'fa-info-circle', label: labels.moreDetails, message: 'Tell me more about this plan' },
+                    { icon: 'fa-th-list', label: labels.comparePlans, message: 'Show me other options' }
+                ];
+            } else if (!isClaims && stage === 'DETAILS') {
+                actions = [
+                    { icon: 'fa-check', label: labels.continuePlan, message: 'I am interested in this plan' },
+                    { icon: 'fa-th-list', label: labels.comparePlans, message: 'Show me other options' },
+                    { icon: 'fa-question-circle', label: labels.askQuestion, message: 'I have a question about this plan' }
+                ];
+            } else if (!isClaims && stage === 'CONFIRM') {
+                actions = [
+                    { icon: 'fa-external-link-alt', label: labels.contact, href: 'https://mutakamela.sa' },
+                    { icon: 'fa-th-list', label: labels.comparePlans, message: 'Show me other options' },
+                    { icon: 'fa-question-circle', label: labels.askQuestion, message: 'I have a question about insurance' }
+                ];
+            } else if (stage === 'CLAIM_EDIT') {
+                const fields = language === 'ar'
+                    ? [['رقم الوثيقة', 'رقم الوثيقة', 'fa-file-alt'], ['تاريخ الحادث', 'تاريخ الحادث', 'fa-calendar'], ['وصف الحادث', 'وصف الحادث', 'fa-pen'], ['معلومات التواصل', 'معلومات التواصل', 'fa-address-card']]
+                    : [['Policy reference', 'Policy reference', 'fa-file-alt'], ['Incident date', 'Incident date', 'fa-calendar'], ['Incident details', 'Incident details', 'fa-pen'], ['Contact details', 'Contact details', 'fa-address-card']];
+                actions = fields.map(([message, label, icon]) => ({ icon, label, message }));
+            } else if (stage === 'CLAIM_CONFIRM') {
+                actions = [
+                    { icon: 'fa-check', label: labels.confirmDraft, message: 'Confirm claim draft' },
+                    { icon: 'fa-edit', label: labels.editDetails, message: 'Edit claim details' }
+                ];
+            } else if (stage === 'CLAIM_COMPLETE') {
+                actions = [
+                    { icon: 'fa-external-link-alt', label: labels.submit, href: 'https://mutakamela.sa' },
+                    { icon: 'fa-plus', label: labels.newClaim, message: 'Start a new claim' }
+                ];
+            } else if (isComplete) {
+                actions = [
+                    { icon: 'fa-plus', label: labels.anotherProduct, message: 'I need another insurance' },
+                    { icon: 'fa-redo', label: labels.startOver, newChat: true }
+                ];
+            }
+
+            if (!actions.length) return '';
+            return `<div class="quick-replies">${actions.map(action => {
+                const icon = `<i class="fas ${action.icon}"></i> `;
+                if (action.href) return `<a class="quick-reply" href="${action.href}" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">${icon}${action.label}</a>`;
+                const handler = action.newChat ? 'startNewChat()' : `sendQuick('${action.message}')`;
+                return `<button type="button" class="quick-reply" onclick="${handler}">${icon}${action.label}</button>`;
+            }).join('')}</div>`;
+        }
 
         function setLang(lang, button) {
             if (!['en', 'ar'].includes(lang)) return;
@@ -998,6 +1137,7 @@ CHAT_HTML = '''
             document.querySelectorAll('[data-language]').forEach(languageButton => {
                 languageButton.classList.toggle('active', languageButton === button);
             });
+            applyLanguage();
         }
 
         function toggleDarkMode() {
@@ -1038,30 +1178,6 @@ CHAT_HTML = '''
             oscillator.stop(audioContext.currentTime + 0.3);
         }
 
-        // Quote form submission
-        async function submitQuoteForm(event) {
-            event.preventDefault();
-            const form = event.target;
-            const name = form.querySelector('input[name="name"]').value;
-            const phone = form.querySelector('input[name="phone"]').value;
-            const email = form.querySelector('input[name="email"]').value;
-            const button = form.querySelector('button[type="submit"]');
-            const error = form.querySelector('.quote-error');
-
-            if (name && phone && button) {
-                button.disabled = true;
-                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-                const submitted = await sendQuick(`My name is ${name}, phone: ${phone}${email ? ', email: ' + email : ''}`);
-                if (submitted) {
-                    form.closest('.quote-form').innerHTML = '<p style="color: var(--success); text-align: center;"><i class="fas fa-check-circle"></i> Details submitted!</p>';
-                } else {
-                    button.disabled = false;
-                    button.innerHTML = '<i class="fas fa-paper-plane"></i> Submit';
-                    if (error) error.textContent = 'Could not submit details. Please retry.';
-                }
-            }
-        }
-
         function addMessage(content, isUser = false, options = {}) {
             const messagesDiv = document.getElementById('chatMessages');
             const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
@@ -1081,6 +1197,18 @@ CHAT_HTML = '''
             bubble.className = 'message-bubble';
             if (isUser || options.plainText) bubble.textContent = String(content);
             else bubble.innerHTML = content;
+            if (!isUser && options.restoreActions && options.stage) {
+                bubble.insertAdjacentHTML('beforeend', buildStageActions(options.stage, options.isClaims, options.isComplete, currentLang));
+            }
+            if (!isUser && typeof options.retryMessage === 'string') {
+                const retryButton = document.createElement('button');
+                retryButton.type = 'button';
+                retryButton.className = 'quick-reply retry-btn';
+                retryButton.dataset.message = options.retryMessage;
+                retryButton.innerHTML = `<i class="fas fa-redo"></i> ${getActionLabels(currentLang).retry}`;
+                retryButton.addEventListener('click', () => retryLastMessage(retryButton));
+                bubble.append(' ', retryButton);
+            }
             const timeElement = document.createElement('span');
             timeElement.className = 'message-time';
             timeElement.textContent = time;
@@ -1089,10 +1217,17 @@ CHAT_HTML = '''
             messagesDiv.appendChild(messageDiv);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
             if (options.persist !== false) {
-                displayHistory.push({
+                const savedMessage = {
                     role: isUser ? 'user' : 'assistant',
                     content: String(options.historyText ?? content)
-                });
+                };
+                if (!isUser && options.stage) {
+                    savedMessage.stage = options.stage;
+                    savedMessage.isClaims = options.isClaims === true;
+                    savedMessage.isComplete = options.isComplete === true;
+                }
+                if (!isUser && typeof options.retryMessage === 'string') savedMessage.retryMessage = options.retryMessage;
+                displayHistory.push(savedMessage);
                 displayHistory = displayHistory.slice(-50);
                 saveChatHistory();
             }
@@ -1113,12 +1248,21 @@ CHAT_HTML = '''
             if (typing) typing.remove();
         }
 
+        function setChatControlsDisabled(disabled) {
+            document.getElementById('messageInput').disabled = disabled;
+            document.querySelector('.send-btn').disabled = disabled;
+            document.querySelectorAll('.category-btn, .quick-reply, .new-chat-action').forEach(button => {
+                if (button instanceof HTMLButtonElement) button.disabled = disabled;
+            });
+        }
+
         async function sendMessage(messageOverride = null, isRetry = false, retryButton = null) {
             const input = document.getElementById('messageInput');
-            const sendButton = document.querySelector('.send-btn');
             if (messageInFlight) return false;
             const message = isRetry ? String(messageOverride || '').trim() : String(messageOverride ?? input.value).trim();
             if (!message) return false;
+
+            const actionLabels = getActionLabels(currentLang);
 
             prepareAudio();
             messageInFlight = true;
@@ -1129,19 +1273,17 @@ CHAT_HTML = '''
                 saveChatHistory();
             }
             input.value = '';
-            input.disabled = true;
-            sendButton.disabled = true;
+            setChatControlsDisabled(true);
             showTyping();
 
             try {
-                const response = await fetch('/api/chat', {
+                const response = await fetch(`${apiBaseUrl}/api/chat`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        session_id: sessionId,
+                        sessionId: sessionId,
                         message: message,
-                        lang: currentLang,
-                        history: conversationHistory.slice(0, -1)
+                        language: currentLang
                     })
                 });
 
@@ -1152,20 +1294,23 @@ CHAT_HTML = '''
 
                 const rawResponse = typeof data.response === 'string' && data.response
                     ? data.response
-                    : 'Sorry, I encountered an error.';
+                    : currentLang === 'ar' ? 'عذراً، حدث خطأ.' : 'Sorry, I encountered an error.';
                 let botResponse = escapeHTML(rawResponse);
 
-                if (typeof data.response_ar === 'string' && data.response_ar) {
-                    botResponse += `<div class="bilingual">${escapeHTML(data.response_ar)}</div>`;
+                const responseArabic = data.responseAr ?? data.response_ar;
+                if (typeof responseArabic === 'string' && responseArabic.trim() && responseArabic.trim() !== rawResponse.trim()) {
+                    botResponse += `<div class="bilingual">${escapeHTML(responseArabic)}</div>`;
                 }
 
-                if (data.selected_product && typeof data.selected_product.name === 'string') {
-                    const coverage = Array.isArray(data.product_details?.coverage)
-                        ? data.product_details.coverage.filter(item => typeof item === 'string').slice(0, 3)
+                const selectedProduct = data.selectedProduct ?? data.selected_product;
+                const productDetails = data.productDetails ?? data.product_details;
+                if (selectedProduct && typeof selectedProduct.name === 'string') {
+                    const coverage = Array.isArray(productDetails?.coverage)
+                        ? productDetails.coverage.filter(item => typeof item === 'string').slice(0, 3)
                         : [];
                     botResponse += `
                         <div class="product-card">
-                            <h4><i class="fas fa-shield-alt"></i> ${escapeHTML(data.selected_product.name)}</h4>
+                            <h4><i class="fas fa-shield-alt"></i> ${escapeHTML(selectedProduct.name)}</h4>
                             ${coverage.length ?
                                 '<ul>' + coverage.map(item => `<li>${escapeHTML(item)}</li>`).join('') + '</ul>'
                                 : ''}
@@ -1173,49 +1318,96 @@ CHAT_HTML = '''
                     `;
                 }
 
-                // Smart quick replies based on stage and response
+                // Match actions to the bot's current conversation stage.
                 const responseText = (data.response || '').toLowerCase();
-                const stage = data.stage || '';
+                const stage = typeof data.stage === 'string' ? data.stage.toUpperCase() : '';
 
-                // Detect what AI is asking for
-                const isAskingForPersonalInfo = responseText.includes('name') && responseText.includes('phone') ||
-                                                 responseText.includes('policy number') ||
-                                                 responseText.includes('provide your');
-                const isRecommending = stage === 'IDENTIFY' || stage === 'RECOMMEND' ||
-                                       responseText.includes('recommend') ||
-                                       responseText.includes('would you like') ||
-                                       responseText.includes('details') ||
-                                       responseText.includes('ready to proceed');
                 const isComplete = stage === 'COMPLETE' ||
                                    responseText.includes('thank you for choosing');
                 const isClaims = responseText.includes('claim') && responseText.includes('hotline');
 
                 // Show appropriate quick replies
-                if (isAskingForPersonalInfo) {
-                    // Show quote form when AI asks for details
-                    botResponse += `
-                        <div class="quote-form">
-                            <h4><i class="fas fa-user-edit"></i> Get Your Quote</h4>
-                            <form onsubmit="submitQuoteForm(event)">
-                                <input type="text" name="name" placeholder="Your Name *" required>
-                                <input type="tel" name="phone" placeholder="Phone Number *" required>
-                                <input type="email" name="email" placeholder="Email (optional)">
-                                <button type="submit"><i class="fas fa-paper-plane"></i> Submit</button>
-                                <p class="quote-error" role="alert"></p>
-                            </form>
-                        </div>
-                    `;
-                } else if (!isComplete && !isClaims && isRecommending) {
+                if (!isClaims && stage === 'RECOMMEND') {
                     botResponse += `
                         <div class="quick-replies">
-                            <button class="quick-reply" onclick="sendQuick('Yes, I want this')">
-                                <i class="fas fa-check"></i> Yes, proceed
-                            </button>
-                            <button class="quick-reply" onclick="sendQuick('Tell me more about this')">
-                                <i class="fas fa-info-circle"></i> More info
+                            <button class="quick-reply" onclick="sendQuick('Tell me more about this plan')">
+                                <i class="fas fa-info-circle"></i> ${actionLabels.moreDetails}
                             </button>
                             <button class="quick-reply" onclick="sendQuick('Show me other options')">
-                                <i class="fas fa-th-list"></i> Other options
+                                <i class="fas fa-th-list"></i> ${actionLabels.comparePlans}
+                            </button>
+                        </div>
+                    `;
+                } else if (!isClaims && stage === 'DETAILS') {
+                    botResponse += `
+                        <div class="quick-replies">
+                            <button class="quick-reply" onclick="sendQuick('I am interested in this plan')">
+                                <i class="fas fa-check"></i> ${actionLabels.continuePlan}
+                            </button>
+                            <button class="quick-reply" onclick="sendQuick('Show me other options')">
+                                <i class="fas fa-th-list"></i> ${actionLabels.comparePlans}
+                            </button>
+                            <button class="quick-reply" onclick="sendQuick('I have a question about this plan')">
+                                <i class="fas fa-question-circle"></i> ${actionLabels.askQuestion}
+                            </button>
+                        </div>
+                    `;
+                } else if (!isClaims && stage === 'CONFIRM') {
+                    botResponse += `
+                        <div class="quick-replies">
+                            <a class="quick-reply" href="https://mutakamela.sa" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+                                <i class="fas fa-external-link-alt"></i> ${actionLabels.contact}
+                            </a>
+                            <button class="quick-reply" onclick="sendQuick('Show me other options')">
+                                <i class="fas fa-th-list"></i> ${actionLabels.comparePlans}
+                            </button>
+                            <button class="quick-reply" onclick="sendQuick('I have a question about insurance')">
+                                <i class="fas fa-question-circle"></i> ${actionLabels.askQuestion}
+                            </button>
+                        </div>
+                    `;
+                } else if (stage === 'CLAIM_EDIT') {
+                    const editChoices = currentLang === 'ar'
+                        ? [
+                            ['رقم الوثيقة', 'رقم الوثيقة', 'fa-file-alt'],
+                            ['تاريخ الحادث', 'تاريخ الحادث', 'fa-calendar'],
+                            ['وصف الحادث', 'وصف الحادث', 'fa-pen'],
+                            ['معلومات التواصل', 'معلومات التواصل', 'fa-address-card']
+                        ]
+                        : [
+                            ['Policy reference', 'Policy reference', 'fa-file-alt'],
+                            ['Incident date', 'Incident date', 'fa-calendar'],
+                            ['Incident details', 'Incident details', 'fa-pen'],
+                            ['Contact details', 'Contact details', 'fa-address-card']
+                        ];
+                    botResponse += `
+                        <div class="quick-replies">
+                            ${editChoices.map(([message, label, icon]) => `
+                                <button class="quick-reply" onclick="sendQuick('${message}')">
+                                    <i class="fas ${icon}"></i> ${label}
+                                </button>
+                            `).join('')}
+                        </div>
+                    `;
+                } else if (stage === 'CLAIM_CONFIRM') {
+                    botResponse += `
+                        <div class="quick-replies">
+                            <button class="quick-reply" onclick="sendQuick('Confirm claim draft')">
+                                <i class="fas fa-check"></i> ${actionLabels.confirmDraft}
+                            </button>
+                            <button class="quick-reply" onclick="sendQuick('Edit claim details')">
+                                <i class="fas fa-edit"></i> ${actionLabels.editDetails}
+                            </button>
+                        </div>
+                    `;
+                } else if (stage === 'CLAIM_COMPLETE') {
+                    botResponse += `
+                        <div class="quick-replies">
+                            <a class="quick-reply" href="https://mutakamela.sa" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+                                <i class="fas fa-external-link-alt"></i> ${actionLabels.submit}
+                            </a>
+                            <button class="quick-reply" onclick="sendQuick('Start a new claim')">
+                                <i class="fas fa-plus"></i> ${actionLabels.newClaim}
                             </button>
                         </div>
                     `;
@@ -1223,10 +1415,10 @@ CHAT_HTML = '''
                     botResponse += `
                         <div class="quick-replies">
                             <button class="quick-reply" onclick="sendQuick('I need another insurance')">
-                                <i class="fas fa-plus"></i> Another product
+                                <i class="fas fa-plus"></i> ${actionLabels.anotherProduct}
                             </button>
                             <button class="quick-reply" onclick="startNewChat()">
-                                <i class="fas fa-redo"></i> Start over
+                                <i class="fas fa-redo"></i> ${actionLabels.startOver}
                             </button>
                         </div>
                     `;
@@ -1238,7 +1430,13 @@ CHAT_HTML = '''
                 conversationHistory.push({ role: 'assistant', content: conversationResponse });
                 conversationHistory = conversationHistory.slice(-20);
                 addMessage(botResponse, false, {
-                    historyText: [rawResponse, data.response_ar].filter(value => typeof value === 'string' && value).join(String.fromCharCode(10))
+                    historyText: [
+                        rawResponse,
+                        typeof responseArabic === 'string' && responseArabic.trim() !== rawResponse.trim() ? responseArabic : null
+                    ].filter(Boolean).join(String.fromCharCode(10)),
+                    stage,
+                    isClaims,
+                    isComplete
                 });
                 saveChatHistory();
                 if (retryButton) retryButton.remove();
@@ -1248,16 +1446,19 @@ CHAT_HTML = '''
             } catch (error) {
                 hideTyping();
                 if (retryButton) retryButton.remove();
-                addMessage('Sorry, there was an error. Please try again. <button type="button" class="quick-reply retry-btn" onclick="retryLastMessage(this)"><i class="fas fa-redo"></i> Retry</button>', false, {
-                    historyText: 'Sorry, there was an error. Please try again.'
+                const errorMessage = currentLang === 'ar'
+                    ? 'عذراً، حدث خطأ. يرجى المحاولة مرة أخرى.'
+                    : 'Sorry, there was an error. Please try again.';
+                addMessage(errorMessage, false, {
+                    historyText: errorMessage,
+                    retryMessage: message
                 });
                 const retryControl = document.querySelector('#chatMessages .message:last-child .retry-btn');
                 retryControl.dataset.message = message;
                 return false;
             } finally {
                 messageInFlight = false;
-                input.disabled = false;
-                sendButton.disabled = false;
+                setChatControlsDisabled(false);
             }
         }
 
@@ -1296,23 +1497,21 @@ CHAT_HTML = '''
 
         async function startNewChat() {
             if (messageInFlight) return;
-            // Clear backend session
+            messageInFlight = true;
+            setChatControlsDisabled(true);
             try {
-                await fetch('/api/clear/' + encodeURIComponent(sessionId), { method: 'DELETE' });
-            } catch (e) {}
+                try {
+                    await fetch(`${apiBaseUrl}/api/chat/${encodeURIComponent(sessionId)}`, { method: 'DELETE' });
+                } catch (e) {}
 
-            // Clear local storage for old session
-            localStorage.removeItem('mutakamela_chat_' + sessionId);
-            conversationHistory = [];
-            displayHistory = [];
+                localStorage.removeItem('mutakamela_chat_' + sessionId);
+                conversationHistory = [];
+                displayHistory = [];
+                sessionId = createSessionId();
+                localStorage.setItem('mutakamela_session', sessionId);
 
-            // Generate new session
-            sessionId = createSessionId();
-            localStorage.setItem('mutakamela_session', sessionId);
-
-            // Clear chat UI
-            const messagesDiv = document.getElementById('chatMessages');
-            messagesDiv.innerHTML = `
+                const messagesDiv = document.getElementById('chatMessages');
+                messagesDiv.innerHTML = `
                 <div class="message bot">
                     <div class="message-avatar"><i class="fas fa-headset"></i></div>
                     <div class="message-content">
@@ -1328,6 +1527,10 @@ CHAT_HTML = '''
                     </div>
                 </div>
             `;
+            } finally {
+                messageInFlight = false;
+                setChatControlsDisabled(false);
+            }
         }
     </script>
 </body>
@@ -1336,7 +1539,8 @@ CHAT_HTML = '''
 
 @app.route('/')
 def home():
-    return render_template_string(CHAT_HTML)
+    api_base_url = os.getenv('DOTNET_API_BASE_URL', 'http://localhost:5000').rstrip('/')
+    return render_template_string(CHAT_HTML, api_base_url=api_base_url)
 
 @app.route('/api/chat', methods=['POST'])
 @limiter.limit(os.getenv('CHAT_RATE_LIMIT', '20 per minute'))
