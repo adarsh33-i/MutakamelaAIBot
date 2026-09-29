@@ -7,7 +7,7 @@ from flask import Flask, request, jsonify, render_template_string
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from policy_selector_adesso import PolicySelectorAdesso
+from conversation_policy_selector import ConversationalPolicySelector
 import os
 import re
 import time
@@ -277,6 +277,7 @@ CHAT_HTML = '''
             border-radius: 16px;
             font-size: 0.9rem;
             line-height: 1.5;
+            white-space: pre-line;
         }
 
         .message.user .message-bubble {
@@ -942,6 +943,15 @@ CHAT_HTML = '''
                         normalized.isClaims = item.isClaims === true || /claim.*hotline|hotline.*claim/i.test(normalized.content);
                         normalized.isComplete = item.isComplete === true || normalized.stage === 'COMPLETE';
                         if (typeof item.retryMessage === 'string') normalized.retryMessage = item.retryMessage.slice(0, 4000);
+                        if (Array.isArray(item.productOptions)) {
+                            normalized.productOptions = item.productOptions
+                                .filter(option => option && typeof option.name === 'string' && option.name.trim())
+                                .slice(0, 10)
+                                .map(option => ({
+                                    name: option.name.slice(0, 200),
+                                    nameAr: typeof option.nameAr === 'string' ? option.nameAr.slice(0, 200) : ''
+                                }));
+                        }
                     }
                     return normalized;
                 })
@@ -1022,6 +1032,7 @@ CHAT_HTML = '''
                 isClaims: message.isClaims,
                 isComplete: message.isComplete,
                 retryMessage: message.retryMessage,
+                productOptions: message.productOptions,
                 restoreActions: true
             }));
             saveChatHistory();
@@ -1140,6 +1151,20 @@ CHAT_HTML = '''
             applyLanguage();
         }
 
+        function buildProductOptionActions(productOptions, language) {
+            const validOptions = productOptions
+                .filter(option => option && typeof option.name === 'string' && option.name.trim())
+                .slice(0, 10);
+            if (!validOptions.length) return '';
+
+            return `<div class="quick-replies">${validOptions.map(option => {
+                const name = language === 'ar' && typeof option.nameAr === 'string' && option.nameAr
+                    ? option.nameAr
+                    : option.name;
+                return `<button type="button" class="quick-reply catalog-product-option" data-product-name="${escapeHTML(name)}">${escapeHTML(name)}</button>`;
+            }).join('')}</div>`;
+        }
+
         function toggleDarkMode() {
             darkMode = !darkMode;
             localStorage.setItem('mutakamela_dark', darkMode);
@@ -1197,6 +1222,12 @@ CHAT_HTML = '''
             bubble.className = 'message-bubble';
             if (isUser || options.plainText) bubble.textContent = String(content);
             else bubble.innerHTML = content;
+            if (!isUser && Array.isArray(options.productOptions)) {
+                bubble.insertAdjacentHTML('beforeend', buildProductOptionActions(options.productOptions, currentLang));
+            }
+            bubble.querySelectorAll('.catalog-product-option').forEach(button => {
+                button.addEventListener('click', () => sendQuick(button.dataset.productName || ''));
+            });
             if (!isUser && options.restoreActions && options.stage) {
                 bubble.insertAdjacentHTML('beforeend', buildStageActions(options.stage, options.isClaims, options.isComplete, currentLang));
             }
@@ -1227,6 +1258,15 @@ CHAT_HTML = '''
                     savedMessage.isComplete = options.isComplete === true;
                 }
                 if (!isUser && typeof options.retryMessage === 'string') savedMessage.retryMessage = options.retryMessage;
+                if (!isUser && Array.isArray(options.productOptions)) {
+                    savedMessage.productOptions = options.productOptions
+                        .filter(option => option && typeof option.name === 'string' && option.name.trim())
+                        .slice(0, 10)
+                        .map(option => ({
+                            name: option.name.slice(0, 200),
+                            nameAr: typeof option.nameAr === 'string' ? option.nameAr.slice(0, 200) : ''
+                        }));
+                }
                 displayHistory.push(savedMessage);
                 displayHistory = displayHistory.slice(-50);
                 saveChatHistory();
@@ -1303,6 +1343,7 @@ CHAT_HTML = '''
                 }
 
                 const selectedProduct = data.selectedProduct ?? data.selected_product;
+                const productOptions = data.productOptions ?? data.product_options;
                 const productDetails = data.productDetails ?? data.product_details;
                 if (selectedProduct && typeof selectedProduct.name === 'string') {
                     const localizedName = currentLang === 'ar' && typeof selectedProduct.nameAr === 'string' && selectedProduct.nameAr
@@ -1440,7 +1481,8 @@ CHAT_HTML = '''
                     ].filter(Boolean).join(String.fromCharCode(10)),
                     stage,
                     isClaims,
-                    isComplete
+                    isComplete,
+                    productOptions: Array.isArray(productOptions) ? productOptions : []
                 });
                 saveChatHistory();
                 if (retryButton) retryButton.remove();
@@ -1580,7 +1622,7 @@ def chat():
 
     session = sessions.get(session_id)
     if session is None:
-        session = {'ai': PolicySelectorAdesso(), 'created': now}
+        session = {'ai': ConversationalPolicySelector(), 'created': now}
         sessions[session_id] = session
     session['last_accessed'] = now
     ai = session['ai']

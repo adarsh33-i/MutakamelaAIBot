@@ -35,7 +35,7 @@ class ChatApiTests(unittest.TestCase):
         web_chat.limiter.reset()
         self.original_rate_limit_enabled = web_chat.app.config.get('RATELIMIT_ENABLED', True)
         web_chat.app.config['RATELIMIT_ENABLED'] = False
-        self.selector_patch = patch.object(web_chat, 'PolicySelectorAdesso', FakePolicySelector)
+        self.selector_patch = patch.object(web_chat, 'ConversationalPolicySelector', FakePolicySelector)
         self.selector_patch.start()
         self.client = web_chat.app.test_client()
 
@@ -87,7 +87,7 @@ class ChatApiTests(unittest.TestCase):
 
     def test_model_fallback_is_returned_as_an_error(self):
         session_id = str(uuid.uuid4())
-        with patch.object(web_chat, 'PolicySelectorAdesso', FailingPolicySelector):
+        with patch.object(web_chat, 'ConversationalPolicySelector', FailingPolicySelector):
             response = self.client.post('/api/chat', json={
                 'session_id': session_id,
                 'message': 'hello',

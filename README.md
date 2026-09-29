@@ -1,6 +1,6 @@
 # Mutakamela AI Bot
 
-An insurance assistant for Mutakamela. Explore 44 products across seven lines of business, get product recommendations, and guide customers through quote and claims questions.
+An insurance assistant for Mutakamela. Browse the 27 product records currently loaded in the local catalog across 11 lines of business, get product recommendations, and guide customers through quote and claims questions. The local catalog may not represent the complete official product inventory.
 
 ## Screenshots
 
@@ -45,13 +45,13 @@ Start the browser widget from the repository root in a second terminal, with the
 PORT=5001 DOTNET_API_BASE_URL=http://localhost:5000 python web_chat.py
 ```
 
-Open `http://localhost:5001`. The widget sends chat and reset requests directly to the .NET API; it does not need an ADESSO key. Swagger UI is available at `http://localhost:5000/swagger` and the API health check is at `http://localhost:5000/api/health`.
+Open `http://localhost:5001`. The widget sends chat and reset requests directly to the .NET API; it does not need an AI provider key. Swagger UI is available at `http://localhost:5000/swagger` and the API health check is at `http://localhost:5000/api/health`.
 
-The separate Python selector and legacy Flask `/api/chat` endpoint remain available. Those legacy paths use `policy_selector_adesso.py` and require `ADESSO_API_KEY`; they are not used by the Qwen-backed browser widget.
+The separate Python selector and legacy Flask `/api/chat` endpoint remain available. Those legacy paths use `conversation_policy_selector.py` and require `OPENAI_API_KEY`; they are not used by the Qwen-backed browser widget.
 
 ## Features
 
-- Browse recommendations from 44 products across motor, health, travel, property, marine, liability, and engineering.
+- Browse recommendations from the 27 product records currently loaded across 11 lines of business.
 - Chat in English or Arabic, with browser-persisted conversation history.
 - Prepare an in-memory claim draft with policy reference, incident date/description, and preferred contact; review and confirm it in chat.
 - Explore product details in chat; quote, payment, and policy requests are handed off to Mutakamela's official site.
@@ -76,15 +76,19 @@ flowchart LR
 
 ## Product Catalog
 
-| LOB | Products |
-|-----|----------|
-| MOTOR | TPL, Comprehensive (Silver/Gold/Platinum), Fleet, Motorcycle |
-| HEALTH | Individual, Family, Corporate, VIP, Maternity, Dental |
-| TRAVEL | Single Trip, Annual, Schengen, Hajj/Umrah, Student |
-| PROPERTY | Home Basic/Comprehensive, Commercial, Industrial, Landlord |
-| MARINE | Cargo, Hull, Freight Forwarder, Inland Transit |
-| LIABILITY | Public, Professional, D&O, Product, Employer, Cyber |
-| ENGINEERING | CAR, EAR, Machinery, Electronic, Decennial, Plant |
+| LOB | Catalog records |
+|-----|-----------------|
+| MOTOR | Motor Insurance (1) |
+| TRAVEL | Travel Insurance, Visit Visa Travel Insurance (2) |
+| SAVINGS | Education Savings, Retirement Savings (2) |
+| PROTECTION | Family Protection (1) |
+| HEALTH | Corporate Health, Medical SME, Group Personal Accident, Group Life (4) |
+| MARINE | Cargo, Hull, Inland Transportation (3) |
+| PROPERTY | Property & Casualty (1) |
+| LIABILITY | Public, Directors & Officers, Product, Professional Indemnity, Clinical Trials (5) |
+| ENGINEERING | Contractors All Risks, Erection All Risks, Machinery Breakdown, Electronic Equipment, Contractors Plant & Machinery, Boiler & Pressure Vessel (6) |
+| CREDIT | Trade Credit (1) |
+| PECUNIARY | Pecuniary Insurance (1) |
 
 ## Example Requests
 
@@ -109,8 +113,7 @@ Copy `.env.example` to `.env` for the Flask widget settings. The local Qwen-back
 | `AI__BaseUrl` | .NET AI endpoint; defaults to Ollama at `http://localhost:11434/v1`. |
 | `AI__Model` | .NET model name; defaults to `qwen3:8b`. |
 | `AI__ApiKey` | Optional bearer key for a secured remote OpenAI-compatible endpoint. Not needed for local Ollama. |
-| `ADESSO_API_KEY`, `ADESSO_API_BASE`, `MODEL_NAME` | Legacy Python selector/Flask API settings only; not used by the integrated widget. |
-| `OPENAI_API_KEY` | Optional; enables OpenAI mode in the separate `policy_selector.py` utility. |
+| `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL` | Legacy Python selector/Flask API settings; the base URL defaults to OpenAI's API. |
 | `CHAT_RATE_LIMIT` | Requests per client address; defaults to `20 per minute`. |
 | `RATELIMIT_STORAGE_URI` | Flask rate-limit storage; use a shared store such as Redis with multiple workers. |
 | `CORS_ORIGINS` | Flask legacy API origin allowlist. The .NET API also needs restrictive CORS settings before production. |
@@ -127,7 +130,7 @@ Ollama must be reachable from the .NET API. Keep it on a private network in prod
 | `http://localhost:5000/api/chat/{sessionId}` | `DELETE` | Clear a .NET chat session. |
 | `http://localhost:5000/api/health` | `GET` | .NET API health check. |
 | `http://localhost:5000/swagger` | `GET` | Interactive .NET API documentation. |
-| `http://localhost:5001/api/chat` | `POST` | Legacy Flask/ADESSO endpoint. |
+| `http://localhost:5001/api/chat` | `POST` | Legacy Flask conversation endpoint. |
 
 ## Tests
 

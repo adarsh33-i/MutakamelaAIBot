@@ -206,6 +206,128 @@ CORP-ENG-001: Contractors All Risks (جميع أخطار المقاولين)
                normalized.Contains("مزيد من التفاصيل") || normalized.Contains("أخبرني المزيد");
     }
 
+    private static bool IsProductListRequest(string message)
+    {
+        var normalized = message.Trim().ToLowerInvariant();
+        return normalized.Contains("show me all") || normalized.Contains("show all") ||
+               normalized.Contains("list all") || normalized.Contains("all products") ||
+               normalized.Contains("all insurance") || normalized.Contains("insurance list") ||
+               normalized.Contains("product list") || normalized.Contains("catalog") ||
+               normalized.Contains("قائمة المنتجات") || normalized.Contains("قائمة التأمين") ||
+               normalized.Contains("جميع المنتجات") || normalized.Contains("كل المنتجات") ||
+               normalized.Contains("اعرض كل");
+    }
+
+    private string? FindMultipleProductCategory(string message)
+    {
+        var normalized = message.Trim().ToLowerInvariant();
+        var categoryTerms = new (string LineOfBusiness, string[] Phrases)[]
+        {
+            ("HEALTH", new[] { "health", "medical", "صحي", "طبي", "الصحة" }),
+            ("TRAVEL", new[] { "travel", "trip insurance", "السفر" }),
+            ("MARINE", new[] { "marine", "cargo insurance", "بحري" }),
+            ("LIABILITY", new[] { "liability", "المسؤولية" }),
+            ("ENGINEERING", new[] { "engineering", "هندسة" }),
+            ("SAVINGS", new[] { "savings", "retirement", "ادخار", "التقاعد" }),
+            ("MOTOR", new[] { "motor", "car insurance", "vehicle insurance", "المركبات", "السيارات" }),
+            ("PROPERTY", new[] { "property", "الممتلكات" }),
+            ("PROTECTION", new[] { "family protection", "حماية العائلة" }),
+            ("CREDIT", new[] { "trade credit", "credit insurance", "الائتمان" }),
+            ("PECUNIARY", new[] { "pecuniary", "التأمين المالي" })
+        };
+
+        foreach (var (lineOfBusiness, phrases) in categoryTerms)
+        {
+            if (phrases.Any(phrase => normalized.Contains(phrase)))
+                return _productCatalog.Count(product => product["lob"]?.ToString() == lineOfBusiness) > 1
+                    ? lineOfBusiness
+                    : null;
+        }
+
+        return null;
+    }
+
+    private static string GetArabicLineOfBusiness(string lineOfBusiness)
+    {
+        return lineOfBusiness switch
+        {
+            "MOTOR" => "المركبات",
+            "TRAVEL" => "السفر",
+            "SAVINGS" => "الادخار",
+            "PROTECTION" => "الحماية",
+            "HEALTH" => "الصحة",
+            "MARINE" => "البحري",
+            "PROPERTY" => "الممتلكات",
+            "LIABILITY" => "المسؤولية",
+            "ENGINEERING" => "الهندسة",
+            "CREDIT" => "الائتمان",
+            "PECUNIARY" => "النقدية",
+            _ => lineOfBusiness
+        };
+    }
+
+    private static string GetEnglishLineOfBusiness(string lineOfBusiness)
+    {
+        return lineOfBusiness switch
+        {
+            "MOTOR" => "Motor",
+            "TRAVEL" => "Travel",
+            "SAVINGS" => "Savings",
+            "PROTECTION" => "Protection",
+            "HEALTH" => "Health",
+            "MARINE" => "Marine",
+            "PROPERTY" => "Property",
+            "LIABILITY" => "Liability",
+            "ENGINEERING" => "Engineering",
+            "CREDIT" => "Credit",
+            "PECUNIARY" => "Pecuniary",
+            _ => lineOfBusiness
+        };
+    }
+
+    private AIPolicyResponse BuildProductListResponse(string? lineOfBusiness = null)
+    {
+        var products = _productCatalog
+            .Where(product => lineOfBusiness == null || product["lob"]?.ToString() == lineOfBusiness)
+            .ToList();
+        string FormatCatalog(bool arabic) => string.Join("\n\n", products
+            .GroupBy(product => product["lob"]?.ToString() ?? "OTHER")
+            .Select(group =>
+            {
+                var heading = arabic ? GetArabicLineOfBusiness(group.Key) : group.Key;
+                var names = group.Select(product =>
+                {
+                    var name = arabic ? product["name_ar"]?.ToString() : product["name"]?.ToString();
+                    return $"- {(!string.IsNullOrWhiteSpace(name) ? name : product["name"]?.ToString())}";
+                });
+                return $"{heading}\n{string.Join("\n", names)}";
+            }));
+
+        var count = products.Count;
+        var englishIntro = lineOfBusiness == null
+            ? $"The loaded API catalog contains {count} product records, not 44. This list reflects the local JSON and may not include every product on Mutakamela's official website."
+            : $"{GetEnglishLineOfBusiness(lineOfBusiness)} insurance products in the loaded catalog ({count}):";
+        var arabicIntro = lineOfBusiness == null
+            ? $"تحتوي قائمة المنتجات المحمّلة في النظام على {count} سجلاً، وليس 44. تعكس هذه القائمة ملف JSON المحلي وقد لا تشمل جميع المنتجات المنشورة على موقع متكاملة الرسمي."
+            : $"منتجات {GetArabicLineOfBusiness(lineOfBusiness)} الموجودة في قائمة المنتجات المحمّلة ({count}):";
+        return new AIPolicyResponse
+        {
+            Stage = "IDENTIFY",
+            Intent = "GET_INFO",
+            Response = $"{englishIntro}\n\n{FormatCatalog(arabic: false)}",
+            ResponseAr = $"{arabicIntro}\n\n{FormatCatalog(arabic: true)}",
+            ProductOptions = lineOfBusiness == null
+                ? new List<SelectedProduct>()
+                : products.Select(product => new SelectedProduct
+                {
+                    Id = product["id"]?.ToString() ?? string.Empty,
+                    Name = product["name"]?.ToString() ?? string.Empty,
+                    NameAr = product["name_ar"]?.ToString() ?? product["name"]?.ToString() ?? string.Empty,
+                    Category = product["category"]?.ToString() ?? string.Empty
+                }).ToList()
+        };
+    }
+
     private static int ProductMentionScore(JToken product, string message)
     {
         var directIdentifiers = new[]
@@ -261,6 +383,14 @@ CORP-ENG-001: Contractors All Risks (جميع أخطار المقاولين)
         }
 
         return null;
+    }
+
+    private JToken? FindProductByExactName(string message)
+    {
+        var normalized = message.Trim();
+        return _productCatalog.FirstOrDefault(product =>
+            string.Equals(product["name"]?.ToString(), normalized, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(product["name_ar"]?.ToString(), normalized, StringComparison.OrdinalIgnoreCase));
     }
 
     private AIPolicyResponse BuildProductDetailsResponse(UserSession session)
@@ -361,7 +491,14 @@ CORP-ENG-001: Contractors All Risks (جميع أخطار المقاولين)
             DetectedLob = priorProduct?["lob"]?.ToString() ?? string.Empty,
             Response = response,
             ResponseAr = responseAr,
-            NextAction = "Choose an option to explore"
+            NextAction = "Choose an option to explore",
+            ProductOptions = options.Select(product => new SelectedProduct
+            {
+                Id = product["id"]?.ToString() ?? string.Empty,
+                Name = product["name"]?.ToString() ?? string.Empty,
+                NameAr = product["name_ar"]?.ToString() ?? product["name"]?.ToString() ?? string.Empty,
+                Category = product["category"]?.ToString() ?? string.Empty
+            }).ToList()
         };
     }
 
@@ -685,6 +822,30 @@ CORP-ENG-001: Contractors All Risks (جميع أخطار المقاولين)
         }
 
         session.AddMessage("user", message);
+        var exactProduct = FindProductByExactName(message);
+        if (exactProduct != null)
+        {
+            session.SelectedProductId = exactProduct["id"]?.ToString();
+            var details = BuildProductDetailsResponse(session);
+            session.AddMessage("assistant", lang == "ar" ? details.ResponseAr : details.Response);
+            return details;
+        }
+
+        var requestedCategory = FindMultipleProductCategory(message);
+        if (requestedCategory != null)
+        {
+            var categoryProducts = BuildProductListResponse(requestedCategory);
+            session.AddMessage("assistant", lang == "ar" ? categoryProducts.ResponseAr : categoryProducts.Response);
+            return categoryProducts;
+        }
+
+        if (IsProductListRequest(message))
+        {
+            var productList = BuildProductListResponse();
+            session.AddMessage("assistant", lang == "ar" ? productList.ResponseAr : productList.Response);
+            return productList;
+        }
+
         if (IsOtherOptionsRequest(message))
         {
             var options = BuildOtherOptionsResponse(session);

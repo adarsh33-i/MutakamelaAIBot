@@ -16,7 +16,7 @@ import json
 import requests
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
-from policy_selector_adesso import PolicySelectorAdesso
+from conversation_policy_selector import ConversationalPolicySelector
 
 load_dotenv()
 
@@ -34,10 +34,10 @@ WHATSAPP_API_URL = f"https://graph.facebook.com/v18.0/{WHATSAPP_PHONE_ID}/messag
 user_sessions = {}
 
 
-def get_or_create_session(phone_number: str) -> PolicySelectorAdesso:
+def get_or_create_session(phone_number: str) -> ConversationalPolicySelector:
     """Get existing session or create new one for user"""
     if phone_number not in user_sessions:
-        user_sessions[phone_number] = PolicySelectorAdesso()
+        user_sessions[phone_number] = ConversationalPolicySelector()
         print(f"📱 New session created for: {phone_number}")
     return user_sessions[phone_number]
 

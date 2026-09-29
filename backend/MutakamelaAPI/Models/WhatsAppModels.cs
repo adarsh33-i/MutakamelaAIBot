@@ -219,6 +219,7 @@ public class AIPolicyResponse
     public string DetectedLob { get; set; } = string.Empty;
     public double Confidence { get; set; }
     public SelectedProduct? SelectedProduct { get; set; }
+    public List<SelectedProduct> ProductOptions { get; set; } = new();
     public ProductDetails? ProductDetails { get; set; }
     public string Response { get; set; } = string.Empty;
     public string ResponseAr { get; set; } = string.Empty;
@@ -259,6 +260,7 @@ public class ChatResponse
     public string Stage { get; set; } = string.Empty;
     public string DetectedLob { get; set; } = string.Empty;
     public SelectedProduct? SelectedProduct { get; set; }
+    public List<SelectedProduct> ProductOptions { get; set; } = new();
     public ProductDetails? ProductDetails { get; set; }
 }
 

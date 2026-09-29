@@ -4,9 +4,9 @@ Mutakamela AI Policy Selector - Interactive Conversation
 Natural conversation flow with no repetition!
 
 Setup:
-    1. Update .env with your API key
+    1. Configure OPENAI_API_KEY in .env
     2. pip install openai python-dotenv
-    3. python policy_selector_adesso.py
+    3. python conversation_policy_selector.py
 """
 
 import json
@@ -24,24 +24,24 @@ except ImportError:
     exit(1)
 
 
-class PolicySelectorAdesso:
-    """Interactive AI Policy Selector with conversation memory"""
+class ConversationalPolicySelector:
+    """OpenAI-compatible conversational policy selector."""
 
     def __init__(self):
         self.products = self._load_products()
         self.conversation_history = []
         self.current_step = "START"  # Track conversation stage
 
-        api_key = os.getenv("ADESSO_API_KEY")
-        api_base = os.getenv("ADESSO_API_BASE", "https://adesso-ai-hub.3asabc.de/v1")
-        self.model = os.getenv("MODEL_NAME", "gpt-4.1-mini")
+        api_key = os.getenv("OPENAI_API_KEY")
+        api_base = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
+        self.model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
         if not api_key:
-            print("⚠️  Please set ADESSO_API_KEY in .env file!")
+            print("⚠️  Please set OPENAI_API_KEY in .env file!")
             exit(1)
 
         self.client = OpenAI(api_key=api_key, base_url=api_base)
-        print(f"✅ Connected to adesso AI Hub")
+        print("✅ Connected to configured AI API")
         print(f"   Model: {self.model}")
 
     def _load_products(self) -> List[Dict]:
@@ -276,7 +276,7 @@ def main():
     print("  • travel insurance to Europe")
     print("\nCommands: 'clear' = restart | 'quit' = exit\n")
 
-    selector = PolicySelectorAdesso()
+    selector = ConversationalPolicySelector()
 
     while True:
         try:

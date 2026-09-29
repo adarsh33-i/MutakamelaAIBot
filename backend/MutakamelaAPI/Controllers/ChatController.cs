@@ -65,6 +65,7 @@ public class ChatController : ControllerBase
                 Stage = aiResponse.Stage,
                 DetectedLob = aiResponse.DetectedLob,
                 SelectedProduct = aiResponse.SelectedProduct,
+                ProductOptions = aiResponse.ProductOptions,
                 ProductDetails = aiResponse.ProductDetails
             });
         }
