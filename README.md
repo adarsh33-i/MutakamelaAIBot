@@ -2,9 +2,12 @@
 
 An insurance assistant for Mutakamela. Explore 44 products across seven lines of business, get product recommendations, and guide customers through quote and claims questions.
 
-<p align="center">
-	<img src="docs/images/web-chat.png" alt="Mutakamela AI web chat welcome screen" width="760">
-</p>
+## Screenshots
+
+| Language | Light mode | Dark mode |
+|:--|:--:|:--:|
+| English | <img src="docs/images/chat-en-light.png" alt="English chat in light mode" width="320"> | <img src="docs/images/chat-en-dark.png" alt="English chat in dark mode" width="320"> |
+| العربية | <img src="docs/images/chat-ar-light.png" alt="Arabic chat in light mode" width="320"> | <img src="docs/images/chat-ar-dark.png" alt="Arabic chat in dark mode" width="320"> |
 
 <p align="center">
 	<img src="https://img.shields.io/badge/Python-3-blue?logo=python&logoColor=white" alt="Python">
