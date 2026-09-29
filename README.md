@@ -3,7 +3,7 @@
 An insurance assistant for Mutakamela. Explore 44 products across seven lines of business, get product recommendations, and guide customers through quote and claims questions.
 
 <p align="center">
-	<img src="backend/MutakamelaAI/docs/images/web-chat.png" alt="Mutakamela AI web chat welcome screen" width="760">
+	<img src="docs/images/web-chat.png" alt="Mutakamela AI web chat welcome screen" width="760">
 </p>
 
 <p align="center">
@@ -20,7 +20,6 @@ An insurance assistant for Mutakamela. Explore 44 products across seven lines of
 ## Quick Start
 
 ```bash
-cd backend/MutakamelaAI
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
@@ -84,7 +83,7 @@ health for company employees      -> Corporate Health Insurance
 
 ## Configuration
 
-Copy `backend/MutakamelaAI/.env.example` to `backend/MutakamelaAI/.env` and set the credentials for the interface you plan to run:
+Copy `.env.example` to `.env` and set the credentials for the interface you plan to run:
 
 | Variable | Purpose |
 |----------|---------|
@@ -110,8 +109,7 @@ The web chat binds to `127.0.0.1` with debug mode off by default. The built-in F
 ## Tests
 
 ```bash
-cd backend/MutakamelaAI
 PYTHONPATH=. python -m unittest discover -s . -p 'test_web_chat.py' -v
 ```
 
-See [`backend/MutakamelaAI/WHATSAPP_SETUP.md`](backend/MutakamelaAI/WHATSAPP_SETUP.md) for WhatsApp integration details.
+See [`WHATSAPP_SETUP.md`](WHATSAPP_SETUP.md) for WhatsApp integration details.

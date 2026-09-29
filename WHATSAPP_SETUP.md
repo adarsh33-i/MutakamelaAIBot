@@ -43,7 +43,6 @@ Temporary Access Token: ________________
 Edit `.env` file:
 
 ```bash
-cd backend/MutakamelaAI
 nano .env
 ```
 
@@ -64,7 +63,6 @@ pip install flask requests python-dotenv
 ### Step 6: Start the Webhook Server
 
 ```bash
-cd backend/MutakamelaAI
 python whatsapp_webhook.py
 ```
 
@@ -136,7 +134,6 @@ git push heroku main
 ```bash
 # On your server
 git clone your-repo
-cd backend/MutakamelaAI
 pip install -r requirements.txt
 
 # Run with gunicorn
