@@ -236,6 +236,7 @@ public class SelectedProduct
 public class ProductDetails
 {
     public List<string> Coverage { get; set; } = new();
+    public List<string> CoverageAr { get; set; } = new();
     public List<string> Features { get; set; } = new();
     public List<string> KeyBenefits { get; set; } = new();
 }

@@ -1305,12 +1305,16 @@ CHAT_HTML = '''
                 const selectedProduct = data.selectedProduct ?? data.selected_product;
                 const productDetails = data.productDetails ?? data.product_details;
                 if (selectedProduct && typeof selectedProduct.name === 'string') {
-                    const coverage = Array.isArray(productDetails?.coverage)
-                        ? productDetails.coverage.filter(item => typeof item === 'string').slice(0, 3)
+                    const localizedName = currentLang === 'ar' && typeof selectedProduct.nameAr === 'string' && selectedProduct.nameAr
+                        ? selectedProduct.nameAr
+                        : selectedProduct.name;
+                    const coverageSource = currentLang === 'ar' ? productDetails?.coverageAr : productDetails?.coverage;
+                    const coverage = Array.isArray(coverageSource)
+                        ? coverageSource.filter(item => typeof item === 'string').slice(0, 3)
                         : [];
                     botResponse += `
                         <div class="product-card">
-                            <h4><i class="fas fa-shield-alt"></i> ${escapeHTML(selectedProduct.name)}</h4>
+                            <h4><i class="fas fa-shield-alt"></i> ${escapeHTML(localizedName)}</h4>
                             ${coverage.length ?
                                 '<ul>' + coverage.map(item => `<li>${escapeHTML(item)}</li>`).join('') + '</ul>'
                                 : ''}

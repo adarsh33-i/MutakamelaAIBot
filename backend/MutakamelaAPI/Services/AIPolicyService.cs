@@ -282,10 +282,13 @@ CORP-ENG-001: Contractors All Risks (جميع أخطار المقاولين)
         var description = product["description"]?.ToString() ?? string.Empty;
         var descriptionAr = product["description_ar"]?.ToString() ?? string.Empty;
         var coverage = product["coverage"]?.Select(item => item.ToString()).Take(4).ToList() ?? new List<string>();
+        var coverageAr = product["coverage_ar"]?.Select(item => item.ToString()).Take(4).ToList() ?? new List<string>();
         var features = product["features"]?.Select(item => item.ToString()).Take(3).ToList() ?? new List<string>();
         var suitableFor = product["suitable_for"]?.Select(item => item.ToString()).Take(3).ToList() ?? new List<string>();
         var response = $"{name}: {description} Coverage includes {string.Join("; ", coverage)}. Suitable for {string.Join(", ", suitableFor)}.";
-        var responseAr = $"{nameAr}: {descriptionAr} تشمل التغطية: {string.Join("، ", coverage)}. مناسبة لـ: {string.Join("، ", suitableFor)}.";
+        var responseAr = $"{nameAr}: {descriptionAr}" + (coverageAr.Count > 0
+            ? $" تشمل التغطية: {string.Join("، ", coverageAr)}."
+            : string.Empty);
 
         return new AIPolicyResponse
         {
@@ -303,6 +306,7 @@ CORP-ENG-001: Contractors All Risks (جميع أخطار المقاولين)
             ProductDetails = new ProductDetails
             {
                 Coverage = coverage,
+                CoverageAr = coverageAr,
                 Features = features
             },
             Response = response,
@@ -633,6 +637,7 @@ CORP-ENG-001: Contractors All Risks (جميع أخطار المقاولين)
             Coverage = product["coverage"]?.Select(item => item.ToString()).Take(4).ToList() ?? new List<string>(),
             Features = product["features"]?.Select(item => item.ToString()).Take(3).ToList() ?? new List<string>()
         };
+        response.ProductDetails.CoverageAr = product["coverage_ar"]?.Select(item => item.ToString()).Take(4).ToList() ?? new List<string>();
         if (string.Equals(response.Stage, "IDENTIFY", StringComparison.OrdinalIgnoreCase))
             response.Stage = "RECOMMEND";
         return response;
