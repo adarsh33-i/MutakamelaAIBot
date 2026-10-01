@@ -1,0 +1,35 @@
+{
+  "id": "buy-insurance",
+  "title": "Buy insurance",
+  "title_ar": "شراء تأمين",
+  "url": "https://eservices.mutakamela.sa/myInsurance/buy-insurance",
+  "kind": "write",
+  "requires_login": true,
+  "requires_approval": false,
+  "verified": false,
+  "_note": "UNVERIFIED: product selection landing page. Choosing Motor hands off to buy-motor-insurance.",
+  "screens": [
+    {
+      "id": "product",
+      "title": "Choose a product",
+      "title_ar": "اختر المنتج",
+      "url_contains": "buy-insurance",
+      "fields": [
+        {
+          "id": "product",
+          "label": "Product",
+          "label_ar": "المنتج",
+          "type": "select",
+          "options": ["motor"],
+          "rule": "product",
+          "selectors": ["role=link[name=/motor|مركبات/i]", "a[href*='buy-Motorinsurance']"],
+          "prompt": "Which product would you like? Currently only Motor can be started from chat.",
+          "prompt_ar": "أي منتج تريد؟ حالياً يمكن بدء تأمين المركبات فقط من المحادثة.",
+          "source": "customer"
+        }
+      ],
+      "next_selector": "a[href*='buy-Motorinsurance']"
+    }
+  ],
+  "outputs": []
+}

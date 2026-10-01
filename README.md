@@ -57,6 +57,7 @@ The separate Python selector and legacy Flask `/api/chat` endpoint remain availa
 - Explore product details in chat; quote, payment, and policy requests are handed off to Mutakamela's official site.
 - Use the standalone selector with OpenAI or its local rule-based fallback.
 - Use the existing Flask-served web widget with the .NET chat API and local Qwen model.
+- Run guided portal journeys from chat (buy motor insurance, update personal info, make a claim, track a claim): the agentic engine collects and validates the details, pauses for the customer's own portal login, shows a review card, and only submits after an explicit confirmation. Ships in simulation mode; see `backend/MutakamelaAPI/README.md` for how the real browser agent is enabled.
 
 Chat requests are limited to 20 per minute per client address by default. Set `CHAT_RATE_LIMIT` to change the limit. The default in-memory rate-limit store is for a single process; multi-worker deployments should set `RATELIMIT_STORAGE_URI` to a shared store such as Redis. Same-origin requests do not need CORS; set `CORS_ORIGINS` to a comma-separated allowlist only when using a separate frontend origin.
 
@@ -138,4 +139,4 @@ Ollama must be reachable from the .NET API. Keep it on a private network in prod
 PYTHONPATH=. python -m unittest discover -s . -p 'test_web_chat.py' -v
 ```
 
-See [`WHATSAPP_SETUP.md`](WHATSAPP_SETUP.md) for WhatsApp integration details.
+See [`documents/WHATSAPP_SETUP.md`](documents/WHATSAPP_SETUP.md) for WhatsApp integration details.

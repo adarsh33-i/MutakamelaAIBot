@@ -224,6 +224,8 @@ public class AIPolicyResponse
     public string Response { get; set; } = string.Empty;
     public string ResponseAr { get; set; } = string.Empty;
     public string NextAction { get; set; } = string.Empty;
+    /// <summary>Present when the message belongs to an agentic portal job.</summary>
+    public ApplicationJobResponse? Application { get; set; }
 }
 
 public class SelectedProduct
@@ -262,6 +264,7 @@ public class ChatResponse
     public SelectedProduct? SelectedProduct { get; set; }
     public List<SelectedProduct> ProductOptions { get; set; } = new();
     public ProductDetails? ProductDetails { get; set; }
+    public ApplicationJobResponse? Application { get; set; }
 }
 
 public class HealthResponse

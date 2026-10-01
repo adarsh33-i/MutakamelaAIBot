@@ -66,7 +66,8 @@ public class ChatController : ControllerBase
                 DetectedLob = aiResponse.DetectedLob,
                 SelectedProduct = aiResponse.SelectedProduct,
                 ProductOptions = aiResponse.ProductOptions,
-                ProductDetails = aiResponse.ProductDetails
+                ProductDetails = aiResponse.ProductDetails,
+                Application = aiResponse.Application
             });
         }
         catch (Exception ex)

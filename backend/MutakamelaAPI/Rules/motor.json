@@ -1,0 +1,142 @@
+{
+  "_comment": "Validation rules applied by RulesEngine before anything is typed into the portal. Each rule has a kind plus parameters; messages are shown in chat when a value fails.",
+  "rules": {
+    "national_id": {
+      "kind": "regex",
+      "pattern": "^[12]\\d{9}$",
+      "message": "The National ID must be 10 digits and start with 1; an Iqama starts with 2.",
+      "message_ar": "يجب أن يتكون رقم الهوية من 10 أرقام ويبدأ بـ 1، ورقم الإقامة يبدأ بـ 2."
+    },
+    "saudi_mobile": {
+      "kind": "regex",
+      "pattern": "^(\\+?966|0)?5\\d{8}$",
+      "normalize": "digits",
+      "message": "Please enter a Saudi mobile number in the form 05XXXXXXXX.",
+      "message_ar": "يرجى إدخال رقم جوال سعودي بالصيغة 05XXXXXXXX."
+    },
+    "email": {
+      "kind": "regex",
+      "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}$",
+      "message": "That doesn't look like a valid email address.",
+      "message_ar": "هذا لا يبدو بريداً إلكترونياً صالحاً."
+    },
+    "person_name": {
+      "kind": "length",
+      "min": 3,
+      "max": 120,
+      "message": "Please enter your full name.",
+      "message_ar": "يرجى إدخال الاسم الكامل."
+    },
+    "policy_number": {
+      "kind": "regex",
+      "pattern": "^[A-Za-z0-9\\-/]{6,30}$",
+      "message": "A policy number is 6–30 letters, digits, dashes or slashes.",
+      "message_ar": "رقم الوثيقة يتكون من 6 إلى 30 حرفاً أو رقماً أو شرطة."
+    },
+    "claim_number": {
+      "kind": "regex",
+      "pattern": "^[A-Za-z0-9\\-/]{5,30}$",
+      "message": "A claim number is 5–30 letters, digits, dashes or slashes.",
+      "message_ar": "رقم المطالبة يتكون من 5 إلى 30 حرفاً أو رقماً أو شرطة."
+    },
+    "accident_report": {
+      "kind": "regex",
+      "pattern": "^[A-Za-z0-9\\-]{5,30}$",
+      "message": "The Najm / Muroor report number should be 5–30 letters or digits.",
+      "message_ar": "رقم تقرير نجم / المرور يتكون من 5 إلى 30 حرفاً أو رقماً."
+    },
+    "plate_number": {
+      "kind": "regex",
+      "pattern": "^(?:[A-Za-z\\u0621-\\u064A] ?){1,3}\\s?-?\\s?\\d{1,4}$|^\\d{1,4}\\s?-?\\s?(?: ?[A-Za-z\\u0621-\\u064A]){1,3}$",
+      "message": "Enter the plate as letters and up to 4 digits, e.g. ABC 1234 or أ ب ج 1234.",
+      "message_ar": "أدخل اللوحة كحروف وحتى 4 أرقام، مثل أ ب ج 1234."
+    },
+    "vehicle_id": {
+      "kind": "regex",
+      "pattern": "^\\d{6,12}$",
+      "message": "The sequence or customs number should be 6–12 digits.",
+      "message_ar": "الرقم التسلسلي أو الجمركي يتكون من 6 إلى 12 رقماً."
+    },
+    "vehicle_id_type": {
+      "kind": "enum",
+      "values": ["sequence", "customs"],
+      "aliases": { "sequence": ["istimara", "استمارة", "تسلسلي", "seq"], "customs": ["customs card", "جمركية", "جمرك"] },
+      "message": "Please choose sequence number or customs card.",
+      "message_ar": "يرجى اختيار الرقم التسلسلي أو البطاقة الجمركية."
+    },
+    "model_year": {
+      "kind": "year_range",
+      "min_offset": -30,
+      "max_offset": 1,
+      "message": "Model year must be within the last 30 years and no later than next year.",
+      "message_ar": "يجب أن تكون سنة الصنع خلال آخر 30 سنة ولا تتجاوز السنة القادمة."
+    },
+    "cover_type": {
+      "kind": "enum",
+      "values": ["third_party", "comprehensive"],
+      "aliases": { "third_party": ["third party", "tpl", "ضد الغير", "طرف ثالث"], "comprehensive": ["full", "شامل"] },
+      "message": "Please choose third party or comprehensive.",
+      "message_ar": "يرجى اختيار ضد الغير أو شامل."
+    },
+    "vehicle_value": {
+      "kind": "number_range",
+      "min": 5000,
+      "max": 5000000,
+      "message": "Vehicle value should be between SAR 5,000 and SAR 5,000,000.",
+      "message_ar": "يجب أن تكون قيمة المركبة بين 5,000 و5,000,000 ريال."
+    },
+    "policy_start_date": {
+      "kind": "date_window",
+      "min_days": 0,
+      "max_days": 90,
+      "message": "The start date must be between today and 90 days from now (YYYY-MM-DD).",
+      "message_ar": "يجب أن يكون تاريخ البداية بين اليوم و90 يوماً من الآن (YYYY-MM-DD)."
+    },
+    "past_date": {
+      "kind": "date_window",
+      "min_days": -3650,
+      "max_days": 0,
+      "message": "The date cannot be in the future (YYYY-MM-DD).",
+      "message_ar": "لا يمكن أن يكون التاريخ في المستقبل (YYYY-MM-DD)."
+    },
+    "date_of_birth": {
+      "kind": "date_of_birth",
+      "min_age": 18,
+      "max_age": 100,
+      "message": "Please enter a valid date of birth (Hijri or Gregorian, YYYY-MM-DD). Drivers must be 18 or older.",
+      "message_ar": "يرجى إدخال تاريخ ميلاد صحيح (هجري أو ميلادي، YYYY-MM-DD). يجب أن يكون عمر السائق 18 سنة أو أكثر."
+    },
+    "yes_no": {
+      "kind": "enum",
+      "values": ["yes", "no"],
+      "aliases": { "yes": ["y", "yeah", "نعم", "اي", "ايوه"], "no": ["n", "nope", "لا", "كلا"] },
+      "message": "Please answer yes or no.",
+      "message_ar": "يرجى الإجابة بنعم أو لا."
+    },
+    "product": {
+      "kind": "enum",
+      "values": ["motor"],
+      "aliases": { "motor": ["car", "vehicle", "مركبات", "سيارة"] },
+      "message": "Only Motor can be started from chat right now.",
+      "message_ar": "يمكن بدء تأمين المركبات فقط من المحادثة حالياً."
+    },
+    "otp": {
+      "kind": "regex",
+      "pattern": "^\\d{4,6}$",
+      "message": "The verification code is 4–6 digits.",
+      "message_ar": "رمز التحقق يتكون من 4 إلى 6 أرقام."
+    },
+    "free_text": {
+      "kind": "length",
+      "min": 2,
+      "max": 500,
+      "message": "Please provide a short answer (2–500 characters).",
+      "message_ar": "يرجى تقديم إجابة قصيرة (من 2 إلى 500 حرف)."
+    }
+  },
+  "forbidden_patterns": {
+    "_comment": "Never accepted into any field: card numbers, CVV, passwords.",
+    "card_number": "^(?:\\d[ -]*?){13,19}$",
+    "cvv_keyword": "(?i)\\b(cvv|cvc|card number|credit card|debit card|password)\\b"
+  }
+}

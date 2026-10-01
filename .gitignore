@@ -2,3 +2,10 @@
 venv/
 __pycache__/
 *.py[cod]
+.DS_Store
+~$*
+bin/
+obj/
+node_modules/
+# Agentic engine runtime data (jobs + evidence)
+backend/MutakamelaAPI/App_Data/

@@ -1,0 +1,99 @@
+{
+  "id": "personal-info",
+  "title": "Personal information",
+  "title_ar": "المعلومات الشخصية",
+  "url": "https://eservices.mutakamela.sa/myInsurance/personalinfo",
+  "kind": "write",
+  "requires_login": true,
+  "requires_approval": true,
+  "verified": false,
+  "_note": "UNVERIFIED: selectors are placeholders until the live page is captured.",
+  "screens": [
+    {
+      "id": "details",
+      "title": "Contact details",
+      "title_ar": "بيانات التواصل",
+      "url_contains": "personalinfo",
+      "fields": [
+        {
+          "id": "full_name",
+          "label": "Full name",
+          "label_ar": "الاسم الكامل",
+          "type": "text",
+          "rule": "person_name",
+          "selectors": ["label=Full Name", "label=الاسم الكامل"],
+          "prompt": "What is your full name as it appears on your ID?",
+          "prompt_ar": "ما اسمك الكامل كما هو في الهوية؟",
+          "source": "portal"
+        },
+        {
+          "id": "mobile",
+          "label": "Mobile number",
+          "label_ar": "رقم الجوال",
+          "type": "text",
+          "rule": "saudi_mobile",
+          "selectors": ["label=Mobile", "label=رقم الجوال", "input[type=tel]"],
+          "prompt": "What mobile number should the policy be linked to? (05XXXXXXXX)",
+          "prompt_ar": "ما رقم الجوال الذي تريد ربط الوثيقة به؟ (05XXXXXXXX)",
+          "source": "customer"
+        },
+        {
+          "id": "email",
+          "label": "Email",
+          "label_ar": "البريد الإلكتروني",
+          "type": "text",
+          "rule": "email",
+          "selectors": ["label=Email", "label=البريد الإلكتروني", "input[type=email]"],
+          "prompt": "What email address should we send the policy document to?",
+          "prompt_ar": "ما البريد الإلكتروني لإرسال وثيقة التأمين؟",
+          "source": "customer"
+        },
+        {
+          "id": "national_address",
+          "label": "National address",
+          "label_ar": "العنوان الوطني",
+          "type": "text",
+          "required": false,
+          "rule": "free_text",
+          "selectors": ["label=Address", "label=العنوان"],
+          "prompt": "Is your National Address the one registered with Saudi Post? Reply yes, or type a different address.",
+          "prompt_ar": "هل عنوانك الوطني هو المسجل لدى البريد السعودي؟ أجب بنعم أو اكتب عنواناً آخر.",
+          "source": "portal"
+        }
+      ],
+      "next_selector": "role=button[name=/continue|متابعة/i]",
+      "error_selector": ".validation-message, .text-danger, [role=alert]"
+    },
+    {
+      "id": "otp",
+      "title": "Verification code",
+      "title_ar": "رمز التحقق",
+      "otp_screen": true,
+      "fields": [
+        {
+          "id": "otp_code",
+          "label": "One-time code",
+          "label_ar": "رمز التحقق",
+          "type": "otp",
+          "rule": "otp",
+          "sensitive": true,
+          "selectors": ["label=Verification Code", "label=رمز التحقق", "input[autocomplete=one-time-code]"],
+          "prompt": "Enter the verification code sent to your mobile.",
+          "prompt_ar": "أدخل رمز التحقق المرسل إلى جوالك.",
+          "source": "customer"
+        }
+      ],
+      "next_selector": "role=button[name=/verify|تحقق/i]",
+      "error_selector": ".validation-message, .text-danger, [role=alert]"
+    },
+    {
+      "id": "confirm",
+      "title": "Confirm",
+      "title_ar": "تأكيد",
+      "fields": [],
+      "next_selector": "role=button[name=/confirm|تأكيد/i]",
+      "is_submit": true
+    }
+  ],
+  "outputs": []
+}

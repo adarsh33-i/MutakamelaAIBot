@@ -3,31 +3,11 @@
     "name": "Mutakamela Insurance Company",
     "name_ar": "شركة متكاملة للتأمين",
     "website": "https://mutakamela.sa",
-    "eservices_portal": "https://eservices.mutakamela.sa",
     "toll_free": "800-301-0001",
-    "phone": "+966 11 8213000",
-    "fax": "+966 11 8213999",
     "email": "Customerservice@mutakamela.sa",
     "location": "Khorais Road, Khaleej Bridge, Malaz Riyadh, Saudi Arabia",
-    "po_box": "P.O. Box 3540, Riyadh 11481",
-    "capital": "SR 600,000,000",
-    "commercial_registration": "1010235601",
-    "royal_decree": "M/60 (18/9/1427 H)",
-    "regulator": "Insurance Authority of Saudi Arabia",
-    "parent_company": "Abu Dhabi National Insurance Company (ADNIC) - 51% stake",
-    "social_media": {
-      "twitter": "@MutakamelaCare",
-      "instagram": "@mutakamela.sa"
-    },
-    "mobile_apps": ["App Store", "Google Play"],
-    "tpa_providers": ["Nextcare", "GlobeMed"]
-  },
-  "services": {
-    "online_quote": "https://eservices.mutakamela.sa/myInsurance/personalinfo",
-    "file_claim": "https://eservices.mutakamela.sa/myInsurance/make-a-claim",
-    "track_claim": "https://eservices.mutakamela.sa/myInsurance/claim-center",
-    "medical_network": "https://eservices.mutakamela.sa/medical-network",
-    "vat_refund": "Available for download on website"
+    "capital": "SR 600 million",
+    "regulator": "Insurance Authority of Saudi Arabia"
   },
   "products": [
     {
@@ -39,7 +19,7 @@
       "tagline": "Dependable Coverage, Every Time",
       "description": "Explore the road with ultimate peace of mind. Flexible motor insurance products designed to cover all your driving needs with comprehensive protection for your vehicle against accidents, theft, and third-party liability.",
       "description_ar": "استكشف الطريق براحة بال تامة. منتجات تأمين مركبات مرنة مصممة لتغطية جميع احتياجات القيادة مع حماية شاملة لمركبتك ضد الحوادث والسرقة ومسؤولية الطرف الثالث.",
-      "keywords": ["car", "vehicle", "motor", "driving", "accident", "سيارة", "مركبة", "حادث", "قيادة", "toyota", "camry", "honda", "collision", "theft"],
+      "keywords": ["car", "vehicle", "motor", "driving", "accident", "سيارة", "مركبة", "حادث", "قيادة", "toyota", "camry", "honda", "collision", "theft", "roadside", "breakdown", "broke down", "stuck", "stranded", "towing", "tow truck", "flat tyre", "flat tire", "battery", "out of fuel", "مساعدة على الطريق", "تعطلت", "عالقة", "عالق", "سطحة", "ونش", "بنشر", "بطارية", "بنزين"],
       "coverage": [
         "Third Party Liability - covers injury/damage to others",
         "Own Damage - covers your vehicle damage",

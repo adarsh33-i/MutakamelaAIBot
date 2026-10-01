@@ -421,6 +421,54 @@ CHAT_HTML = '''
             background: var(--primary-dark);
         }
 
+        .callback-form {
+            margin-top: 12px;
+            padding: 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--primary-light);
+        }
+
+        .callback-form input[type="tel"] {
+            width: 100%;
+            margin: 8px 0;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg-white);
+            color: var(--text-dark);
+            font: inherit;
+        }
+
+        .callback-consent {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin: 8px 0 12px;
+            font-size: 0.8rem;
+        }
+
+        .callback-consent input {
+            margin-top: 3px;
+        }
+
+        .callback-form button {
+            width: 100%;
+            padding: 10px;
+            border: 0;
+            border-radius: 6px;
+            background: var(--primary);
+            color: white;
+            font: inherit;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        body.dark-mode .callback-form input[type="tel"] {
+            background: #16213e;
+            color: #e0e0e0;
+        }
+
         .quote-form button:disabled,
         .send-btn:disabled {
             cursor: wait;
@@ -590,6 +638,12 @@ CHAT_HTML = '''
         .category-btn.travel .icon { color: #00897b; }
         .category-btn.property .icon-bg { background: #fff8e1; }
         .category-btn.property .icon { color: #ff8f00; }
+        .application-card ul { margin: 8px 0 0; padding-inline-start: 18px; }
+        .application-card li { margin: 2px 0; font-size: 0.92em; }
+        .application-card .app-ref { margin-top: 8px; font-weight: 600; }
+        .application-card .app-disclaimer { margin-top: 8px; font-size: 0.8em; opacity: 0.75; }
+        .application-card[data-status="Failed"] h4, .application-card[data-status="Cancelled"] h4 { color: #c62828; }
+        .application-card[data-status="Done"] h4 { color: #2e7d32; }
         .category-btn.claims .icon-bg { background: #fce4ec; }
         .category-btn.claims .icon { color: #e91e63; }
 
@@ -943,6 +997,7 @@ CHAT_HTML = '''
                         normalized.isClaims = item.isClaims === true || /claim.*hotline|hotline.*claim/i.test(normalized.content);
                         normalized.isComplete = item.isComplete === true || normalized.stage === 'COMPLETE';
                         if (typeof item.retryMessage === 'string') normalized.retryMessage = item.retryMessage.slice(0, 4000);
+                        if (typeof item.portalUrl === 'string' && /^https:\/\/eservices\.mutakamela\.sa\//.test(item.portalUrl)) normalized.portalUrl = item.portalUrl;
                         if (Array.isArray(item.productOptions)) {
                             normalized.productOptions = item.productOptions
                                 .filter(option => option && typeof option.name === 'string' && option.name.trim())
@@ -961,7 +1016,9 @@ CHAT_HTML = '''
 
         const validChatStages = new Set([
             'IDENTIFY', 'RECOMMEND', 'DETAILS', 'CONFIRM', 'COMPLETE',
-            'CLAIM_EDIT', 'CLAIM_EDIT_VALUE', 'CLAIM_INTAKE', 'CLAIM_CONFIRM', 'CLAIM_COMPLETE'
+            'CLAIM_EDIT', 'CLAIM_EDIT_VALUE', 'CLAIM_INTAKE', 'CLAIM_CONFIRM', 'CLAIM_COMPLETE',
+            'APP_COLLECT', 'APP_LOGIN', 'APP_OTP', 'APP_WORKING', 'APP_REVIEW', 'APP_PAYMENT',
+            'APP_EDIT', 'APP_DONE', 'APP_FAILED', 'APP_CANCELLED', 'PROCEED_MOTOR'
         ]);
 
         function inferStoredStage(content) {
@@ -1032,6 +1089,7 @@ CHAT_HTML = '''
                 isClaims: message.isClaims,
                 isComplete: message.isComplete,
                 retryMessage: message.retryMessage,
+                portalUrl: message.portalUrl,
                 productOptions: message.productOptions,
                 restoreActions: true
             }));
@@ -1074,22 +1132,91 @@ CHAT_HTML = '''
                 ? {
                     moreDetails: 'تفاصيل أكثر', comparePlans: 'مقارنة الخطط الأخرى',
                     continuePlan: 'المتابعة بهذه الخطة', askQuestion: 'طرح سؤال',
+                    requestCallback: 'طلب معاودة الاتصال',
                     contact: 'تواصل مع متكاملة', confirmDraft: 'تأكيد المسودة',
                     editDetails: 'تعديل التفاصيل', submit: 'التقديم عبر متكاملة',
                     newClaim: 'مسودة مطالبة جديدة', anotherProduct: 'منتج آخر',
-                    startOver: 'بدء محادثة جديدة', retry: 'إعادة المحاولة'
+                    startOver: 'بدء محادثة جديدة', retry: 'إعادة المحاولة',
+                    confirmSubmit: 'تأكيد والإرسال', cancelRequest: 'إلغاء الطلب',
+                    openPortal: 'فتح بوابة متكاملة', loggedIn: 'سجلت الدخول',
+                    payNow: 'إكمال الدفع', paid: 'تم الدفع', trackClaim: 'تتبع المطالبة',
+                    fileClaim: 'تقديم مطالبة', buyMotor: 'شراء تأمين مركبات'
                 }
                 : {
                     moreDetails: 'More details', comparePlans: 'Compare other plans',
                     continuePlan: 'Continue with this plan', askQuestion: 'Ask a question',
+                    requestCallback: 'Request a callback',
                     contact: 'Contact Mutakamela', confirmDraft: 'Confirm draft',
                     editDetails: 'Edit details', submit: 'Submit through Mutakamela',
                     newClaim: 'New claim draft', anotherProduct: 'Another product',
-                    startOver: 'Start over', retry: 'Retry'
+                    startOver: 'Start over', retry: 'Retry',
+                    confirmSubmit: 'Confirm & submit', cancelRequest: 'Cancel request',
+                    openPortal: 'Open Mutakamela portal', loggedIn: "I've logged in",
+                    payNow: 'Complete payment', paid: 'I have paid', trackClaim: 'Track claim',
+                    fileClaim: 'File a claim', buyMotor: 'Buy motor insurance'
                 };
         }
 
-        function buildStageActions(stage, isClaims, isComplete, language) {
+        // Quick replies for the agentic portal journeys. Every message maps to a
+        // plain-text command the orchestrator understands; approval is always explicit.
+        function buildAgentActions(stage, labels, portalUrl) {
+            const portal = portalUrl || 'https://eservices.mutakamela.sa/myInsurance';
+            switch (stage) {
+                case 'APP_LOGIN':
+                    return [
+                        { icon: 'fa-external-link-alt', label: labels.openPortal, href: portal },
+                        { icon: 'fa-check', label: labels.loggedIn, message: 'logged in' },
+                        { icon: 'fa-times', label: labels.cancelRequest, message: 'cancel' }
+                    ];
+                case 'APP_REVIEW':
+                    return [
+                        { icon: 'fa-check', label: labels.confirmSubmit, message: 'confirm' },
+                        { icon: 'fa-edit', label: labels.editDetails, message: 'edit' },
+                        { icon: 'fa-times', label: labels.cancelRequest, message: 'cancel' }
+                    ];
+                case 'APP_PAYMENT':
+                    return [
+                        { icon: 'fa-credit-card', label: labels.payNow, href: portal },
+                        { icon: 'fa-check', label: labels.paid, message: 'paid' },
+                        { icon: 'fa-times', label: labels.cancelRequest, message: 'cancel' }
+                    ];
+                case 'APP_COLLECT':
+                case 'APP_OTP':
+                case 'APP_EDIT':
+                    return [{ icon: 'fa-times', label: labels.cancelRequest, message: 'cancel' }];
+                case 'APP_DONE':
+                case 'APP_FAILED':
+                case 'APP_CANCELLED':
+                    return [
+                        { icon: 'fa-search', label: labels.trackClaim, message: 'Track my claim' },
+                        { icon: 'fa-file-alt', label: labels.fileClaim, message: 'I want to file a claim' },
+                        { icon: 'fa-car', label: labels.buyMotor, message: 'I want to buy motor insurance' }
+                    ];
+                default:
+                    return [];
+            }
+        }
+
+        // Status/review card rendered from the job object returned by the .NET API.
+        function buildApplicationCard(application, language) {
+            if (!application || typeof application !== 'object') return '';
+            const ar = language === 'ar';
+            const status = ar ? application.statusMessageAr : application.statusMessage;
+            const review = application.review || {};
+            const lines = Array.isArray(review.lines) ? review.lines.slice(0, 20) : [];
+            const showLines = ['AwaitingApproval', 'Done', 'Filling'].includes(application.status) && lines.length;
+            const ref = application.referenceNumber ? `<div class="app-ref"><i class="fas fa-hashtag"></i> ${escapeHTML(application.referenceNumber)}</div>` : '';
+            const disclaimer = ar ? review.disclaimerAr : review.disclaimer;
+            return `
+                <div class="product-card application-card" data-status="${escapeHTML(application.status || '')}">
+                    <h4><i class="fas fa-robot"></i> ${escapeHTML(status || application.status || '')}</h4>
+                    ${showLines ? '<ul>' + lines.map(line => `<li><strong>${escapeHTML(ar ? (line.labelAr || line.label) : line.label)}:</strong> ${escapeHTML(line.value)}</li>`).join('') + '</ul>' : ''}
+                    ${ref}
+                    ${showLines && disclaimer ? `<div class="app-disclaimer">${escapeHTML(disclaimer)}</div>` : ''}
+                </div>`;
+        }
+
+        function buildStageActions(stage, isClaims, isComplete, language, options = {}) {
             const labels = getActionLabels(language);
             let actions = [];
 
@@ -1102,7 +1229,8 @@ CHAT_HTML = '''
                 actions = [
                     { icon: 'fa-check', label: labels.continuePlan, message: 'I am interested in this plan' },
                     { icon: 'fa-th-list', label: labels.comparePlans, message: 'Show me other options' },
-                    { icon: 'fa-question-circle', label: labels.askQuestion, message: 'I have a question about this plan' }
+                    { icon: 'fa-question-circle', label: labels.askQuestion, message: 'I have a question about this plan' },
+                    { icon: 'fa-phone', label: labels.requestCallback, callback: true }
                 ];
             } else if (!isClaims && stage === 'CONFIRM') {
                 actions = [
@@ -1125,6 +1253,13 @@ CHAT_HTML = '''
                     { icon: 'fa-external-link-alt', label: labels.submit, href: 'https://mutakamela.sa' },
                     { icon: 'fa-plus', label: labels.newClaim, message: 'Start a new claim' }
                 ];
+            } else if (stage === 'PROCEED_MOTOR') {
+                actions = [
+                    { icon: 'fa-car', label: labels.buyMotor, message: 'I want to buy motor insurance' },
+                    { icon: 'fa-th-list', label: labels.comparePlans, message: 'Show me other options' }
+                ];
+            } else if (stage.startsWith('APP_')) {
+                actions = buildAgentActions(stage, labels, options.portalUrl);
             } else if (isComplete) {
                 actions = [
                     { icon: 'fa-plus', label: labels.anotherProduct, message: 'I need another insurance' },
@@ -1136,6 +1271,7 @@ CHAT_HTML = '''
             return `<div class="quick-replies">${actions.map(action => {
                 const icon = `<i class="fas ${action.icon}"></i> `;
                 if (action.href) return `<a class="quick-reply" href="${action.href}" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">${icon}${action.label}</a>`;
+                if (action.callback) return `<button type="button" class="quick-reply callback-request-btn">${icon}${action.label}</button>`;
                 const handler = action.newChat ? 'startNewChat()' : `sendQuick('${action.message}')`;
                 return `<button type="button" class="quick-reply" onclick="${handler}">${icon}${action.label}</button>`;
             }).join('')}</div>`;
@@ -1165,12 +1301,77 @@ CHAT_HTML = '''
             }).join('')}</div>`;
         }
 
+        function showCallbackForm(productName = '') {
+            const arabic = currentLang === 'ar';
+            const labels = arabic
+                ? {
+                    prompt: 'أدخل رقم هاتفك ووافق على استخدامه للتواصل بشأن هذا المنتج.',
+                    phone: 'رقم الهاتف', consent: 'أوافق على استخدام رقمي للتواصل بشأن هذا الطلب.',
+                    submit: 'متابعة', unavailable: 'لم يُرسل طلب معاودة الاتصال ولم يُحفظ رقمك. هذه النسخة التجريبية غير متصلة بخدمة العملاء، لذا لن يتم تحديد موعد اتصال. يرجى التواصل مع متكاملة على الرقم 8003010001.'
+                }
+                : {
+                    prompt: 'Enter your phone number and consent to being contacted about this product.',
+                    phone: 'Phone number', consent: 'I consent to using my number to contact me about this request.',
+                    submit: 'Continue', unavailable: 'Your callback request was not sent and your number was not saved. This demo is not connected to customer service, so no call is scheduled. Please contact Mutakamela at 800-301-0001.'
+                };
+            addMessage(labels.prompt, false, { plainText: true, persist: false });
+            const bubble = document.querySelector('#chatMessages .message.bot:last-child .message-bubble');
+            const form = document.createElement('form');
+            form.className = 'callback-form';
+            const product = document.createElement('strong');
+            product.textContent = productName;
+            if (productName) form.append(product, document.createElement('br'));
+
+            const phoneLabel = document.createElement('label');
+            phoneLabel.textContent = labels.phone;
+            const phoneInput = document.createElement('input');
+            phoneInput.type = 'tel';
+            phoneInput.name = 'phone';
+            phoneInput.autocomplete = 'tel';
+            phoneInput.required = true;
+            phoneInput.pattern = '[+]?[0-9]{7,15}';
+            phoneInput.placeholder = '+966501234567';
+            phoneInput.setAttribute('aria-label', labels.phone);
+            phoneLabel.append(phoneInput);
+
+            const consentLabel = document.createElement('label');
+            consentLabel.className = 'callback-consent';
+            const consentInput = document.createElement('input');
+            consentInput.type = 'checkbox';
+            consentInput.required = true;
+            consentLabel.append(consentInput, document.createTextNode(labels.consent));
+
+            const submit = document.createElement('button');
+            submit.type = 'submit';
+            submit.textContent = labels.submit;
+            form.append(phoneLabel, consentLabel, submit);
+            form.addEventListener('submit', event => {
+                event.preventDefault();
+                phoneInput.value = '';
+                form.remove();
+                addMessage(labels.unavailable, false, { plainText: true, persist: false });
+            });
+            bubble.append(form);
+            phoneInput.focus();
+        }
+
         function toggleDarkMode() {
             darkMode = !darkMode;
             localStorage.setItem('mutakamela_dark', darkMode);
             document.body.classList.toggle('dark-mode');
             const icon = document.querySelector('.theme-toggle i');
             icon.className = darkMode ? 'fas fa-sun' : 'fas fa-moon';
+        }
+
+        function flowPortalUrl(flowId) {
+            const base = 'https://eservices.mutakamela.sa/myInsurance/';
+            return {
+                'buy-insurance': base + 'buy-insurance',
+                'buy-motor-insurance': base + 'buy-Motorinsurance',
+                'personal-info': base + 'personalinfo',
+                'make-a-claim': base + 'make-a-claim',
+                'track-a-claim': base + 'Track-a-Claim'
+            }[flowId] || base;
         }
 
         function escapeHTML(value) {
@@ -1228,8 +1429,11 @@ CHAT_HTML = '''
             bubble.querySelectorAll('.catalog-product-option').forEach(button => {
                 button.addEventListener('click', () => sendQuick(button.dataset.productName || ''));
             });
+            bubble.querySelectorAll('.callback-request-btn').forEach(button => {
+                button.addEventListener('click', () => showCallbackForm(button.dataset.productName || ''));
+            });
             if (!isUser && options.restoreActions && options.stage) {
-                bubble.insertAdjacentHTML('beforeend', buildStageActions(options.stage, options.isClaims, options.isComplete, currentLang));
+                bubble.insertAdjacentHTML('beforeend', buildStageActions(options.stage, options.isClaims, options.isComplete, currentLang, { portalUrl: options.portalUrl }));
             }
             if (!isUser && typeof options.retryMessage === 'string') {
                 const retryButton = document.createElement('button');
@@ -1256,6 +1460,7 @@ CHAT_HTML = '''
                     savedMessage.stage = options.stage;
                     savedMessage.isClaims = options.isClaims === true;
                     savedMessage.isComplete = options.isComplete === true;
+                    if (typeof options.portalUrl === 'string' && /^https:\/\/eservices\.mutakamela\.sa\//.test(options.portalUrl)) savedMessage.portalUrl = options.portalUrl;
                 }
                 if (!isUser && typeof options.retryMessage === 'string') savedMessage.retryMessage = options.retryMessage;
                 if (!isUser && Array.isArray(options.productOptions)) {
@@ -1366,6 +1571,9 @@ CHAT_HTML = '''
                 // Match actions to the bot's current conversation stage.
                 const responseText = (data.response || '').toLowerCase();
                 const stage = typeof data.stage === 'string' ? data.stage.toUpperCase() : '';
+                const application = data.application && typeof data.application === 'object' ? data.application : null;
+                const portalUrl = application?.outputs?.payment_url || (application?.flowId ? flowPortalUrl(application.flowId) : null);
+                if (application) botResponse += buildApplicationCard(application, currentLang);
 
                 const isComplete = stage === 'COMPLETE' ||
                                    responseText.includes('thank you for choosing');
@@ -1384,6 +1592,9 @@ CHAT_HTML = '''
                         </div>
                     `;
                 } else if (!isClaims && stage === 'DETAILS') {
+                    const callbackProductName = currentLang === 'ar' && selectedProduct?.nameAr
+                        ? selectedProduct.nameAr
+                        : selectedProduct?.name || '';
                     botResponse += `
                         <div class="quick-replies">
                             <button class="quick-reply" onclick="sendQuick('I am interested in this plan')">
@@ -1394,6 +1605,9 @@ CHAT_HTML = '''
                             </button>
                             <button class="quick-reply" onclick="sendQuick('I have a question about this plan')">
                                 <i class="fas fa-question-circle"></i> ${actionLabels.askQuestion}
+                            </button>
+                            <button type="button" class="quick-reply callback-request-btn" data-product-name="${escapeHTML(callbackProductName)}">
+                                <i class="fas fa-phone"></i> ${actionLabels.requestCallback}
                             </button>
                         </div>
                     `;
@@ -1456,6 +1670,8 @@ CHAT_HTML = '''
                             </button>
                         </div>
                     `;
+                } else if (stage === 'PROCEED_MOTOR' || stage.startsWith('APP_')) {
+                    botResponse += buildStageActions(stage, false, false, currentLang, { portalUrl });
                 } else if (isComplete) {
                     botResponse += `
                         <div class="quick-replies">
@@ -1482,6 +1698,7 @@ CHAT_HTML = '''
                     stage,
                     isClaims,
                     isComplete,
+                    portalUrl,
                     productOptions: Array.isArray(productOptions) ? productOptions : []
                 });
                 saveChatHistory();

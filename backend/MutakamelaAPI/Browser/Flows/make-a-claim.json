@@ -1,0 +1,151 @@
+{
+  "id": "make-a-claim",
+  "title": "Make a motor claim",
+  "title_ar": "تقديم مطالبة مركبات",
+  "url": "https://eservices.mutakamela.sa/myInsurance/make-a-claim",
+  "kind": "write",
+  "requires_login": true,
+  "requires_approval": true,
+  "verified": false,
+  "_note": "UNVERIFIED: selectors are placeholders until the live page is captured.",
+  "screens": [
+    {
+      "id": "policy",
+      "title": "Policy",
+      "title_ar": "الوثيقة",
+      "url_contains": "make-a-claim",
+      "fields": [
+        {
+          "id": "policy_number",
+          "label": "Policy number",
+          "label_ar": "رقم الوثيقة",
+          "type": "text",
+          "rule": "policy_number",
+          "selectors": ["label=Policy Number", "label=رقم الوثيقة", "input[name*='policy' i]"],
+          "prompt": "What is your policy number?",
+          "prompt_ar": "ما رقم وثيقتك؟",
+          "source": "profile"
+        },
+        {
+          "id": "national_id",
+          "label": "National ID / Iqama",
+          "label_ar": "رقم الهوية / الإقامة",
+          "type": "text",
+          "rule": "national_id",
+          "selectors": ["label=National ID", "label=رقم الهوية"],
+          "prompt": "What is the National ID or Iqama number on the policy?",
+          "prompt_ar": "ما رقم الهوية الوطنية أو الإقامة المسجل في الوثيقة؟",
+          "source": "profile"
+        }
+      ],
+      "next_selector": "role=button[name=/next|التالي/i]",
+      "error_selector": ".validation-message, .text-danger, [role=alert]"
+    },
+    {
+      "id": "accident",
+      "title": "Accident details",
+      "title_ar": "تفاصيل الحادث",
+      "fields": [
+        {
+          "id": "accident_report_number",
+          "label": "Najm / Muroor report number",
+          "label_ar": "رقم تقرير نجم / المرور",
+          "type": "text",
+          "rule": "accident_report",
+          "selectors": ["label=Report Number", "label=رقم التقرير"],
+          "prompt": "What is the Najm or Muroor accident report number?",
+          "prompt_ar": "ما رقم تقرير الحادث من نجم أو المرور؟",
+          "source": "document"
+        },
+        {
+          "id": "accident_date",
+          "label": "Accident date",
+          "label_ar": "تاريخ الحادث",
+          "type": "date",
+          "rule": "past_date",
+          "selectors": ["label=Accident Date", "label=تاريخ الحادث"],
+          "prompt": "What date did the accident happen? (YYYY-MM-DD)",
+          "prompt_ar": "ما تاريخ وقوع الحادث؟ (YYYY-MM-DD)",
+          "source": "document"
+        },
+        {
+          "id": "accident_location",
+          "label": "Location",
+          "label_ar": "الموقع",
+          "type": "text",
+          "rule": "free_text",
+          "selectors": ["label=Location", "label=الموقع"],
+          "prompt": "Where did the accident happen? (city and street or landmark)",
+          "prompt_ar": "أين وقع الحادث؟ (المدينة والشارع أو أقرب معلم)",
+          "source": "customer"
+        },
+        {
+          "id": "plate_number",
+          "label": "Plate number",
+          "label_ar": "رقم اللوحة",
+          "type": "text",
+          "rule": "plate_number",
+          "selectors": ["label=Plate Number", "label=رقم اللوحة"],
+          "prompt": "What is the vehicle plate number?",
+          "prompt_ar": "ما رقم لوحة المركبة؟",
+          "source": "document"
+        },
+        {
+          "id": "other_party_involved",
+          "label": "Other party involved",
+          "label_ar": "وجود طرف آخر",
+          "type": "radio",
+          "options": ["yes", "no"],
+          "rule": "yes_no",
+          "selectors": ["label=Other party involved", "label=طرف آخر"],
+          "prompt": "Was another vehicle or party involved? (yes / no)",
+          "prompt_ar": "هل كانت هناك مركبة أو طرف آخر في الحادث؟ (نعم / لا)",
+          "source": "customer"
+        },
+        {
+          "id": "description",
+          "label": "Damage description",
+          "label_ar": "وصف الضرر",
+          "type": "text",
+          "rule": "free_text",
+          "selectors": ["label=Description", "label=الوصف", "textarea"],
+          "prompt": "Briefly describe what happened and the damage.",
+          "prompt_ar": "صف بإيجاز ما حدث والأضرار.",
+          "source": "customer"
+        }
+      ],
+      "next_selector": "role=button[name=/next|التالي/i]",
+      "error_selector": ".validation-message, .text-danger, [role=alert]"
+    },
+    {
+      "id": "documents",
+      "title": "Documents",
+      "title_ar": "المستندات",
+      "fields": [
+        {
+          "id": "damage_photos",
+          "label": "Damage photos",
+          "label_ar": "صور الأضرار",
+          "type": "file",
+          "required": false,
+          "selectors": ["input[type=file]"],
+          "prompt": "Please upload photos of the damage (optional).",
+          "prompt_ar": "يرجى رفع صور الأضرار (اختياري).",
+          "source": "document"
+        }
+      ],
+      "next_selector": "role=button[name=/next|التالي/i]"
+    },
+    {
+      "id": "review",
+      "title": "Review and submit",
+      "title_ar": "المراجعة والإرسال",
+      "fields": [],
+      "next_selector": "role=button[name=/submit|إرسال/i]",
+      "is_submit": true
+    }
+  ],
+  "outputs": [
+    { "id": "claim_number", "label": "Claim number", "label_ar": "رقم المطالبة", "selectors": ["[data-field='claim-number']", "text=/claim number|رقم المطالبة/i >> xpath=following-sibling::*[1]"] }
+  ]
+}

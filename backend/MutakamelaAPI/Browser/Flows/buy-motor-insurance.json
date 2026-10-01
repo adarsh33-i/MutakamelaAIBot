@@ -1,0 +1,178 @@
+{
+  "id": "buy-motor-insurance",
+  "title": "Motor insurance quote",
+  "title_ar": "عرض سعر تأمين المركبات",
+  "url": "https://eservices.mutakamela.sa/myInsurance/buy-Motorinsurance",
+  "kind": "write-with-payment-handoff",
+  "requires_login": true,
+  "requires_approval": true,
+  "verified": false,
+  "_note": "UNVERIFIED: selectors are placeholders until the live page is captured. Payment is never automated.",
+  "screens": [
+    {
+      "id": "applicant",
+      "title": "Applicant",
+      "title_ar": "مقدم الطلب",
+      "url_contains": "buy-Motorinsurance",
+      "fields": [
+        {
+          "id": "national_id",
+          "label": "National ID / Iqama",
+          "label_ar": "رقم الهوية / الإقامة",
+          "type": "text",
+          "rule": "national_id",
+          "selectors": ["label=National ID", "label=رقم الهوية"],
+          "prompt": "What is your National ID or Iqama number?",
+          "prompt_ar": "ما رقم هويتك الوطنية أو إقامتك؟",
+          "source": "document"
+        },
+        {
+          "id": "date_of_birth",
+          "label": "Date of birth",
+          "label_ar": "تاريخ الميلاد",
+          "type": "date",
+          "rule": "date_of_birth",
+          "selectors": ["label=Date of Birth", "label=تاريخ الميلاد"],
+          "prompt": "What is your date of birth? Hijri (e.g. 1410-05-20) or Gregorian (e.g. 1990-01-15).",
+          "prompt_ar": "ما تاريخ ميلادك؟ هجري (مثل 1410-05-20) أو ميلادي (مثل 1990-01-15).",
+          "source": "document"
+        }
+      ],
+      "next_selector": "role=button[name=/next|التالي/i]",
+      "error_selector": ".validation-message, .text-danger, [role=alert]"
+    },
+    {
+      "id": "vehicle",
+      "title": "Vehicle",
+      "title_ar": "المركبة",
+      "fields": [
+        {
+          "id": "vehicle_id_type",
+          "label": "Vehicle ID type",
+          "label_ar": "نوع معرف المركبة",
+          "type": "radio",
+          "options": ["sequence", "customs"],
+          "rule": "vehicle_id_type",
+          "selectors": ["label=Sequence Number", "label=Customs Card"],
+          "prompt": "Do you have a vehicle sequence number (Istimara) or a customs card number?",
+          "prompt_ar": "هل لديك رقم تسلسلي للمركبة (استمارة) أم رقم بطاقة جمركية؟",
+          "source": "customer"
+        },
+        {
+          "id": "vehicle_id",
+          "label": "Sequence / customs number",
+          "label_ar": "الرقم التسلسلي / الجمركي",
+          "type": "text",
+          "rule": "vehicle_id",
+          "selectors": ["label=Sequence Number", "label=الرقم التسلسلي", "label=Customs Card Number"],
+          "prompt": "What is the sequence number or customs card number?",
+          "prompt_ar": "ما الرقم التسلسلي أو رقم البطاقة الجمركية؟",
+          "source": "document"
+        },
+        {
+          "id": "model_year",
+          "label": "Model year",
+          "label_ar": "سنة الصنع",
+          "type": "select",
+          "rule": "model_year",
+          "selectors": ["label=Model Year", "label=سنة الصنع"],
+          "prompt": "What is the vehicle model year?",
+          "prompt_ar": "ما سنة صنع المركبة؟",
+          "source": "document"
+        }
+      ],
+      "next_selector": "role=button[name=/next|التالي/i]",
+      "error_selector": ".validation-message, .text-danger, [role=alert]"
+    },
+    {
+      "id": "cover",
+      "title": "Cover",
+      "title_ar": "التغطية",
+      "fields": [
+        {
+          "id": "cover_type",
+          "label": "Cover type",
+          "label_ar": "نوع التغطية",
+          "type": "radio",
+          "options": ["third_party", "comprehensive"],
+          "rule": "cover_type",
+          "selectors": ["label=Third Party", "label=Comprehensive"],
+          "prompt": "Which cover do you want: third party or comprehensive?",
+          "prompt_ar": "أي تغطية تريد: ضد الغير أم شامل؟",
+          "source": "customer"
+        },
+        {
+          "id": "vehicle_value",
+          "label": "Vehicle value (SAR)",
+          "label_ar": "قيمة المركبة (ريال)",
+          "type": "text",
+          "required": false,
+          "required_when": { "cover_type": ["comprehensive"] },
+          "rule": "vehicle_value",
+          "selectors": ["label=Vehicle Value", "label=قيمة المركبة"],
+          "prompt": "What is the estimated vehicle value in SAR?",
+          "prompt_ar": "ما القيمة التقديرية للمركبة بالريال؟",
+          "source": "customer"
+        },
+        {
+          "id": "policy_start_date",
+          "label": "Policy start date",
+          "label_ar": "تاريخ بداية الوثيقة",
+          "type": "date",
+          "rule": "policy_start_date",
+          "selectors": ["label=Start Date", "label=تاريخ البداية"],
+          "prompt": "When should the policy start? (YYYY-MM-DD, within the next 90 days)",
+          "prompt_ar": "متى تبدأ الوثيقة؟ (YYYY-MM-DD، خلال 90 يوماً القادمة)",
+          "source": "customer"
+        },
+        {
+          "id": "additional_drivers",
+          "label": "Additional drivers",
+          "label_ar": "سائقون إضافيون",
+          "type": "radio",
+          "options": ["yes", "no"],
+          "rule": "yes_no",
+          "selectors": ["label=Additional Drivers", "label=سائقون إضافيون"],
+          "prompt": "Will anyone else drive the vehicle? (yes / no)",
+          "prompt_ar": "هل سيقود المركبة شخص آخر؟ (نعم / لا)",
+          "source": "customer"
+        }
+      ],
+      "next_selector": "role=button[name=/get quote|عرض السعر/i]",
+      "error_selector": ".validation-message, .text-danger, [role=alert]"
+    },
+    {
+      "id": "quotes",
+      "title": "Quotes",
+      "title_ar": "عروض الأسعار",
+      "ready_selector": "text=/premium|القسط/i",
+      "fields": [
+        {
+          "id": "selected_quote",
+          "label": "Selected quote",
+          "label_ar": "العرض المختار",
+          "type": "select",
+          "required": false,
+          "rule": "free_text",
+          "selectors": ["role=button[name=/select|اختيار/i]"],
+          "prompt": "Which quote would you like to go ahead with?",
+          "prompt_ar": "أي عرض سعر تريد المتابعة به؟",
+          "source": "portal"
+        }
+      ],
+      "next_selector": "role=button[name=/continue|متابعة/i]"
+    },
+    {
+      "id": "payment",
+      "title": "Payment",
+      "title_ar": "الدفع",
+      "payment_handoff": true,
+      "fields": []
+    }
+  ],
+  "outputs": [
+    { "id": "quote_options", "label": "Quote options", "label_ar": "عروض الأسعار", "selectors": ["[data-field='quote']"] },
+    { "id": "payment_url", "label": "Payment link", "label_ar": "رابط الدفع", "selectors": [] },
+    { "id": "policy_number", "label": "Policy number", "label_ar": "رقم الوثيقة", "selectors": ["[data-field='policy-number']"] }
+  ]
+}

@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text;
 using System.Text.RegularExpressions;
+using MutakamelaAPI.Applications;
 using MutakamelaAPI.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -13,6 +14,8 @@ public class AIPolicyService : IAIPolicyService
     private readonly IConfiguration _config;
     private readonly ILogger<AIPolicyService> _logger;
     private readonly ISessionManager _sessionManager;
+    private readonly IApplicationOrchestrator _applications;
+    private readonly bool _agentEnabled;
     private readonly string _apiUrl;
     private readonly string _model;
     private readonly string _productsJson;
@@ -53,12 +56,15 @@ public class AIPolicyService : IAIPolicyService
         HttpClient httpClient,
         IConfiguration config,
         ILogger<AIPolicyService> logger,
-        ISessionManager sessionManager)
+        ISessionManager sessionManager,
+        IApplicationOrchestrator applications)
     {
         _httpClient = httpClient;
         _config = config;
         _logger = logger;
         _sessionManager = sessionManager;
+        _applications = applications;
+        _agentEnabled = !string.Equals(_config["Agent:Enabled"], "false", StringComparison.OrdinalIgnoreCase);
 
         _apiUrl = (_config["AI:BaseUrl"] ?? "http://localhost:11434/v1").TrimEnd('/');
         _model = _config["AI:Model"] ?? "qwen3:8b";
@@ -163,6 +169,53 @@ CORP-ENG-001: Contractors All Risks (جميع أخطار المقاولين)
             Response = "This chat can explain insurance products, but quote requests, payments, and policy activation are not connected here. Please contact Mutakamela at mutakamela.sa for official next steps.",
             ResponseAr = "يمكن لهذه المحادثة شرح منتجات التأمين، لكن طلبات عروض الأسعار والمدفوعات وتفعيل الوثائق غير متصلة هنا. للمتابعة الرسمية، يرجى التواصل مع متكاملة عبر mutakamela.sa.",
             NextAction = "Visit Mutakamela for official assistance"
+        };
+    }
+
+    /// <summary>
+    /// "Continue with this plan" with the agent enabled. Motor hands straight into the
+    /// guided purchase journey; every other line of business is explained and routed
+    /// to the official site, because only the motor portal pages are automated.
+    /// </summary>
+    private AIPolicyResponse BuildProceedResponse(UserSession session)
+    {
+        var product = FindPriorProduct(session);
+        var lob = product?["lob"]?.ToString() ?? string.Empty;
+        var name = product?["name"]?.ToString() ?? "this plan";
+        var nameAr = product?["name_ar"]?.ToString() ?? name;
+
+        if (lob == "MOTOR")
+        {
+            return new AIPolicyResponse
+            {
+                Stage = "PROCEED_MOTOR",
+                Intent = "BUY_POLICY",
+                DetectedLob = "MOTOR",
+                Response = "Great. I can take you through the motor quote now: I'll ask for your ID, vehicle and cover details, fill the Mutakamela portal for you, and stop at the payment page which you complete yourself. Say \"buy motor insurance\" to start.",
+                ResponseAr = "ممتاز. يمكنني متابعة عرض سعر تأمين المركبات الآن: سأطلب رقم الهوية وبيانات المركبة والتغطية، وأعبئ بوابة متكاملة نيابة عنك، وأتوقف عند صفحة الدفع التي تكملها بنفسك. اكتب \"شراء تأمين مركبات\" للبدء.",
+                NextAction = "Start buy-motor-insurance",
+                SelectedProduct = product == null ? null : new SelectedProduct
+                {
+                    Id = product["id"]?.ToString() ?? string.Empty, Name = name, NameAr = nameAr,
+                    Category = product["category"]?.ToString() ?? string.Empty
+                }
+            };
+        }
+
+        var url = product?["url"]?.ToString() ?? "https://mutakamela.sa";
+        return new AIPolicyResponse
+        {
+            Stage = "CONFIRM",
+            Intent = "GET_QUOTE",
+            DetectedLob = lob,
+            Response = $"{name} can't be purchased from this chat yet; only motor insurance is connected to the guided portal flow. You can get a {name} quote directly at {url}, or I can request a callback from a Mutakamela advisor.",
+            ResponseAr = $"لا يمكن شراء {nameAr} من هذه المحادثة حالياً؛ تأمين المركبات فقط متصل بالمسار الإرشادي للبوابة. يمكنك الحصول على عرض سعر {nameAr} مباشرة عبر {url}، أو يمكنني طلب معاودة اتصال من مستشار متكاملة.",
+            NextAction = "Visit product page or request callback",
+            SelectedProduct = product == null ? null : new SelectedProduct
+            {
+                Id = product["id"]?.ToString() ?? string.Empty, Name = name, NameAr = nameAr,
+                Category = product["category"]?.ToString() ?? string.Empty
+            }
         };
     }
 
@@ -502,6 +555,54 @@ CORP-ENG-001: Contractors All Risks (جميع أخطار المقاولين)
         };
     }
 
+    /// <summary>
+    /// Vehicle breakdown / stranded situations. Handled before the LLM because the
+    /// right answer is Motor Insurance's 24/7 roadside assistance, and a free-text
+    /// model tends to misread "stuck" as a travel scenario.
+    /// </summary>
+    private static bool IsRoadsideAssistanceRequest(string message)
+    {
+        var m = message.Trim().ToLowerInvariant();
+        bool Has(params string[] words) => words.Any(m.Contains);
+        var breakdown = Has("roadside", "breakdown", "broke down", "broken down", "stuck", "stranded", "tow", "flat tyre", "flat tire",
+                            "battery", "out of fuel", "out of petrol", "won't start", "wont start", "engine",
+                            "مساعدة على الطريق", "تعطلت", "عالق", "سطحة", "ونش", "بنشر", "بطارية", "بنزين", "ما تشتغل");
+        var travelContext = Has("flight", "airport", "abroad", "visa", "trip", "رحلة", "مطار", "تأشيرة");
+        return breakdown && !travelContext;
+    }
+
+    private AIPolicyResponse BuildRoadsideAssistanceResponse()
+    {
+        var product = _productCatalog.FirstOrDefault(item => item["id"]?.ToString() == "IND-MOT-001");
+        var response = new AIPolicyResponse
+        {
+            Stage = "DETAILS",
+            Intent = "GET_INFO",
+            DetectedLob = "MOTOR",
+            Confidence = 0.95,
+            Response = "That sounds like a vehicle breakdown. Mutakamela Motor Insurance includes 24/7 roadside assistance (RSA): towing, battery jump-start, flat tyre and fuel delivery. If you already have a Mutakamela motor policy, call the roadside assistance number on your policy card or use the eServices portal to request help now. Would you like the full Motor Insurance details?",
+            ResponseAr = "يبدو أن مركبتك تعطلت. يشمل تأمين المركبات من متكاملة خدمة المساعدة على الطريق على مدار الساعة: السطحة، وتشغيل البطارية، وتبديل الإطار، وتوصيل الوقود. إذا كانت لديك وثيقة تأمين مركبات من متكاملة، اتصل برقم المساعدة على الطريق المدوّن في بطاقة الوثيقة أو اطلب المساعدة عبر بوابة الخدمات الإلكترونية. هل تريد تفاصيل تأمين المركبات كاملة؟",
+            NextAction = "Offer Motor Insurance details or roadside assistance request"
+        };
+        if (product == null) return response;
+        response.SelectedProduct = new SelectedProduct
+        {
+            Id = product["id"]?.ToString() ?? string.Empty,
+            Name = product["name"]?.ToString() ?? string.Empty,
+            NameAr = product["name_ar"]?.ToString() ?? string.Empty,
+            Category = product["category"]?.ToString() ?? string.Empty
+        };
+        response.ProductDetails = new ProductDetails
+        {
+            Coverage = new List<string> { "24/7 Roadside Assistance - towing, battery, flat tyre, fuel" }
+                .Concat(product["coverage"]?.Select(item => item.ToString()).Take(3) ?? Array.Empty<string>()).ToList(),
+            CoverageAr = new List<string> { "المساعدة على الطريق 24/7 - سطحة، بطارية، إطار، وقود" }
+                .Concat(product["coverage_ar"]?.Select(item => item.ToString()).Take(3) ?? Array.Empty<string>()).ToList(),
+            Features = product["features"]?.Select(item => item.ToString()).Take(3).ToList() ?? new List<string>()
+        };
+        return response;
+    }
+
     private static bool IsClaimStartRequest(string message)
     {
         var normalized = message.Trim().ToLowerInvariant();
@@ -810,15 +911,45 @@ CORP-ENG-001: Contractors All Risks (جميع أخطار المقاولين)
     {
         var session = _sessionManager.GetOrCreateSession(sessionId);
 
+        if (_agentEnabled)
+        {
+            // An active portal job owns the conversation until it finishes or is cancelled.
+            var jobReply = await _applications.HandleMessageAsync(sessionId, message, lang);
+            if (jobReply != null)
+            {
+                session.AddMessage("user", "Portal job input provided.");
+                session.AddMessage("assistant", jobReply.Response);
+                return jobReply;
+            }
+
+            var flowId = PortalIntent.Detect(message);
+            if (flowId != null)
+            {
+                session.AddMessage("user", $"Requested portal journey: {flowId}.");
+                var started = await _applications.StartAsync(sessionId, flowId, lang);
+                session.AddMessage("assistant", started.Response);
+                return started;
+            }
+        }
+
         if (_claimDrafts.TryGetValue(sessionId, out var claimDraft) || IsClaimStartRequest(message))
             return ProcessClaimMessage(session, sessionId, message, claimDraft);
 
+        if (IsRoadsideAssistanceRequest(message))
+        {
+            session.AddMessage("user", message);
+            var roadside = BuildRoadsideAssistanceResponse();
+            session.SelectedProductId = roadside.SelectedProduct?.Id;
+            session.AddMessage("assistant", lang == "ar" ? roadside.ResponseAr : roadside.Response);
+            return roadside;
+        }
+
         if (IsUnsupportedSalesRequest(message))
         {
-            session.AddMessage("user", "Customer requested quote or contact assistance.");
-            var handoff = GetSalesHandoffResponse();
-            session.AddMessage("assistant", handoff.Response);
-            return handoff;
+            session.AddMessage("user", "Customer wants to proceed with a plan.");
+            var proceed = _agentEnabled ? BuildProceedResponse(session) : GetSalesHandoffResponse();
+            session.AddMessage("assistant", proceed.Response);
+            return proceed;
         }
 
         session.AddMessage("user", message);
@@ -876,8 +1007,8 @@ CONVERSATION RULES:
 3. When customer first selects a product - SHOW full details immediately
 4. Be concise - no long introductions, get to the point
 5. After showing details, ask ""Ready to proceed?"" or ""Need anything else?""
-6. This demo cannot create quotes, accept payments, or issue policies. Never ask for names, phone numbers, email addresses, policy numbers, or payment details.
-7. If the customer wants to proceed with a quote or purchase, explain this limitation and direct them to mutakamela.sa. Never claim a quote or policy was submitted, confirmed, active, or purchased.
+6. You only explain products here. Quotes, claims and profile updates are handled by a separate guided flow: if the customer wants to buy motor insurance, file or track a claim, or update personal details, tell them to say so plainly (e.g. ""buy motor insurance"", ""file a claim"", ""track my claim"") and the guided flow will take over. Do not collect IDs, phone numbers, emails or policy numbers yourself.
+7. Never ask for card numbers, CVV or passwords. Never claim a quote, policy or claim was submitted, confirmed, active or purchased; only the guided flow reports real outcomes.
 
 STAGES: IDENTIFY → RECOMMEND → DETAILS → CONFIRM → COMPLETE
 
@@ -983,6 +1114,7 @@ Provide the NEXT appropriate response in JSON:
 
     public void ClearSession(string sessionId)
     {
+        _applications.ClearSessionAsync(sessionId).GetAwaiter().GetResult();
         _claimDrafts.TryRemove(sessionId, out _);
         _sessionManager.ClearSession(sessionId);
         _logger.LogInformation("🗑️ Session cleared: {SessionId}", sessionId);
