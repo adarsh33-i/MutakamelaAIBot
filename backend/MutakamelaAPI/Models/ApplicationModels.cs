@@ -31,10 +31,11 @@ public static class FlowIds
     public const string PersonalInfo = "personal-info";
     public const string MakeAClaim = "make-a-claim";
     public const string TrackAClaim = "track-a-claim";
+    public const string SubmitComplaint = "submit-complaint";
 
     public static readonly string[] All =
     {
-        BuyInsurance, BuyMotorInsurance, PersonalInfo, MakeAClaim, TrackAClaim
+        BuyInsurance, BuyMotorInsurance, PersonalInfo, MakeAClaim, TrackAClaim, SubmitComplaint
     };
 }
 
@@ -59,6 +60,12 @@ public class ApplicationJob
     /// <summary>Set when the customer asked for another journey mid-job; cleared on any other reply.</summary>
     public string? PendingSwitchTo { get; set; }
 
+    /// <summary>Where each stored value came from: typed | extracted | retrieved | provided | skipped.</summary>
+    public Dictionary<string, string> Provenance { get; set; } = new();
+
+    /// <summary>A low-confidence extracted value waiting for the customer's yes/no.</summary>
+    public PendingSlot? PendingConfirmation { get; set; }
+
     public string? FailureReason { get; set; }
     public string? FailureReasonAr { get; set; }
     public string? ReferenceNumber { get; set; }
@@ -73,10 +80,10 @@ public class ApplicationJob
     private static readonly Dictionary<JobStatus, JobStatus[]> Allowed = new()
     {
         [JobStatus.Collecting] = new[] { JobStatus.Validating, JobStatus.Cancelled, JobStatus.Failed },
-        [JobStatus.Validating] = new[] { JobStatus.AwaitingLogin, JobStatus.Filling, JobStatus.Collecting, JobStatus.Cancelled, JobStatus.Failed },
+        [JobStatus.Validating] = new[] { JobStatus.AwaitingLogin, JobStatus.AwaitingApproval, JobStatus.Filling, JobStatus.Collecting, JobStatus.Cancelled, JobStatus.Failed },
         [JobStatus.AwaitingLogin] = new[] { JobStatus.Filling, JobStatus.Cancelled, JobStatus.Failed },
         [JobStatus.Filling] = new[] { JobStatus.AwaitingApproval, JobStatus.Done, JobStatus.Collecting, JobStatus.Cancelled, JobStatus.Failed },
-        [JobStatus.AwaitingApproval] = new[] { JobStatus.Submitting, JobStatus.Collecting, JobStatus.Cancelled, JobStatus.Failed },
+        [JobStatus.AwaitingApproval] = new[] { JobStatus.Submitting, JobStatus.Collecting, JobStatus.Done, JobStatus.Cancelled, JobStatus.Failed },
         [JobStatus.Submitting] = new[] { JobStatus.Done, JobStatus.Failed },
         [JobStatus.Done] = Array.Empty<JobStatus>(),
         [JobStatus.Failed] = Array.Empty<JobStatus>(),
@@ -112,6 +119,8 @@ public class ApplicationJob
     public bool IsTerminal => Status is JobStatus.Done or JobStatus.Failed or JobStatus.Cancelled;
 }
 
+public record PendingSlot(string FieldId, string Value, string Source);
+
 public class JobEvent
 {
     public DateTime Timestamp { get; set; }
@@ -145,6 +154,8 @@ public class ApplicationJobResponse
     public JobStatus Status { get; set; }
     public string StatusMessage { get; set; } = string.Empty;
     public string StatusMessageAr { get; set; } = string.Empty;
+    /// <summary>Field id of an extracted value the customer is being asked to confirm, if any.</summary>
+    public string? PendingConfirmationField { get; set; }
     public List<string> MissingFields { get; set; } = new();
     public List<FieldProblem> ValidationErrors { get; set; } = new();
     public Dictionary<string, string> Data { get; set; } = new();
@@ -182,4 +193,9 @@ public class ReviewLine
     public string Value { get; set; } = string.Empty;
     /// <summary>customer | document | profile | portal</summary>
     public string Source { get; set; } = "customer";
+}
+
+public class ExternalSubmissionRequest
+{
+    public string? ComplaintNumber { get; set; }
 }

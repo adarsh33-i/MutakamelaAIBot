@@ -2,59 +2,37 @@
   "id": "track-a-claim",
   "title": "Track a claim",
   "title_ar": "تتبع مطالبة",
-  "url": "https://eservices.mutakamela.sa/myInsurance/Track-a-Claim",
-  "kind": "read-only",
-  "requires_login": true,
+  "url": "https://mutakamela.sa/claim-center/",
+  "kind": "external-form-handoff",
+  "requires_login": false,
   "requires_approval": false,
-  "verified": false,
-  "_note": "UNVERIFIED: selectors are placeholders until the live page is captured. The real browser agent refuses unverified specs; only the simulator runs them.",
+  "external_handoff": true,
+  "verified": true,
+  "_note": "The public Claim Center lookup form and its claim-number field were inspected on 2026-10-05. The chatbot prefills the claim number only. The customer enters their ID/Iqama/CR on the official page and clicks Track Status; the form result has not been inspected or retrieved by chat.",
   "screens": [
     {
       "id": "lookup",
       "title": "Claim lookup",
       "title_ar": "البحث عن المطالبة",
-      "url_contains": "Track-a-Claim",
-      "ready_selector": "role=heading",
+      "url_contains": "/claim-center/",
+      "ready_selector": "#form-field-field1_05bd650",
       "fields": [
         {
           "id": "claim_number",
-          "label": "Claim number",
+          "label": "Claim Number",
           "label_ar": "رقم المطالبة",
           "type": "text",
           "required": true,
           "rule": "claim_number",
-          "selectors": ["label=Claim Number", "label=رقم المطالبة", "input[name*='claim' i]"],
-          "prompt": "What is your claim number?",
-          "prompt_ar": "ما رقم المطالبة؟",
+          "selectors": ["#form-field-field1_05bd650"],
+          "prompt": "What is your claim number? I’ll fill it into Mutakamela’s official tracking form. Enter your ID/Iqama/CR there yourself.",
+          "prompt_ar": "ما رقم المطالبة؟ سأعبئه في نموذج التتبع الرسمي لمتكاملة. أدخل رقم الهوية/الإقامة/السجل التجاري هناك بنفسك.",
           "source": "customer"
-        },
-        {
-          "id": "national_id",
-          "label": "National ID / Iqama",
-          "label_ar": "رقم الهوية / الإقامة",
-          "type": "text",
-          "required": true,
-          "rule": "national_id",
-          "selectors": ["label=National ID", "label=رقم الهوية", "input[name*='id' i]"],
-          "prompt": "What is the National ID or Iqama number on the policy?",
-          "prompt_ar": "ما رقم الهوية الوطنية أو الإقامة المسجل في الوثيقة؟",
-          "source": "profile"
         }
       ],
-      "next_selector": "role=button[name=/track|تتبع/i]",
-      "error_selector": ".validation-message, .text-danger, [role=alert]"
-    },
-    {
-      "id": "result",
-      "title": "Claim status",
-      "title_ar": "حالة المطالبة",
-      "ready_selector": "text=/status|الحالة/i",
-      "fields": []
+      "next_selector": "#submit_claims",
+      "error_selector": "[role=alert], .elementor-message-danger"
     }
   ],
-  "outputs": [
-    { "id": "claim_status", "label": "Status", "label_ar": "الحالة", "selectors": ["[data-field='status']", "text=/status/i >> xpath=following-sibling::*[1]"] },
-    { "id": "last_updated", "label": "Last updated", "label_ar": "آخر تحديث", "selectors": ["[data-field='updated']"] },
-    { "id": "next_step", "label": "Next step", "label_ar": "الخطوة التالية", "selectors": ["[data-field='next-step']"] }
-  ]
+  "outputs": []
 }

@@ -21,6 +21,8 @@ public interface IApplicationOrchestrator
     Task<ApplicationJobResponse?> ApproveAsync(string jobId, string lang);
     Task<ApplicationJobResponse?> CancelAsync(string jobId, string lang);
     Task<ApplicationJobResponse?> MarkLoginCompleteAsync(string jobId, string lang);
+    /// <summary>External-form flows only: the website confirmed submission; close the job.</summary>
+    Task<ApplicationJobResponse?> ConfirmExternalSubmissionAsync(string jobId, string? complaintNumber, string lang);
     Task ClearSessionAsync(string sessionId);
     ApplicationJobResponse ToResponse(ApplicationJob job, string lang);
 }
@@ -38,6 +40,7 @@ public class ApplicationOrchestrator : IApplicationOrchestrator
     private readonly IFlowRegistry _flows;
     private readonly IRulesEngine _rules;
     private readonly IBrowserAgent _browser;
+    private readonly ISlotExtractor _slots;
     private readonly ILogger<ApplicationOrchestrator> _logger;
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _jobLocks = new();
 
@@ -46,12 +49,14 @@ public class ApplicationOrchestrator : IApplicationOrchestrator
         IFlowRegistry flows,
         IRulesEngine rules,
         IBrowserAgent browser,
+        ISlotExtractor slots,
         ILogger<ApplicationOrchestrator> logger)
     {
         _store = store;
         _flows = flows;
         _rules = rules;
         _browser = browser;
+        _slots = slots;
         _logger = logger;
     }
 
@@ -90,14 +95,29 @@ public class ApplicationOrchestrator : IApplicationOrchestrator
                     job.Data[kv.Key] = kv.Value;
         }
 
+        string? triggerMessage = null;
         if (seed != null)
             foreach (var kv in seed)
+            {
+                if (kv.Key == "_message") { triggerMessage = kv.Value; continue; }
                 if (flow.FindField(kv.Key) != null && !string.IsNullOrWhiteSpace(kv.Value))
+                {
                     job.Data[kv.Key] = kv.Value;
+                    job.Provenance[kv.Key] = "provided";
+                }
+            }
 
         await _store.SaveAsync(job);
         var intro = IntroFor(flow, lang);
+
+        // Perceive: pull whatever the opening message already contains so we only ask for the rest.
+        var extractedSummary = triggerMessage == null ? null : await ApplyExtractedSlotsAsync(job, flow, triggerMessage, lang);
         var next = await AdvanceAsync(job, flow, lang);
+        if (!string.IsNullOrEmpty(extractedSummary?.English))
+        {
+            next.Response = extractedSummary.English + "\n\n" + next.Response;
+            next.ResponseAr = extractedSummary.Arabic + "\n\n" + next.ResponseAr;
+        }
         next.Response = intro.English + "\n\n" + next.Response;
         next.ResponseAr = intro.Arabic + "\n\n" + next.ResponseAr;
         return next;
@@ -229,6 +249,17 @@ public class ApplicationOrchestrator : IApplicationOrchestrator
                     return Reply("APP_WORKING", "I'm still working on the portal for you. One moment.", "ما زلت أعمل على البوابة من أجلك. لحظة من فضلك.", job, lang);
 
                 case JobStatus.AwaitingApproval:
+                    if (flow.Id == FlowIds.TrackAClaim &&
+                        TryExtractClaimStatusReport(text) is { } reportedStatus)
+                    {
+                        job.Outputs["customerReportedStatus"] = reportedStatus;
+                        job.TryTransition(JobStatus.Done, "customer shared a status displayed by the portal");
+                        await _store.SaveAsync(job);
+                        return Reply("APP_DONE",
+                            $"Based on the wording you shared, the portal status is: {reportedStatus}. I did not retrieve or independently verify it. You can ask me another question or start a new tracking request.",
+                            $"استناداً إلى النص الذي شاركته، حالة البوابة هي: {reportedStatus}. لم أسترجع الحالة أو أتحقق منها بشكل مستقل. يمكنك طرح سؤال آخر أو بدء طلب تتبع جديد.",
+                            job, lang);
+                    }
                     if (IsEditRequest(lowered))
                     {
                         var field = MatchField(flow, lowered);
@@ -244,6 +275,16 @@ public class ApplicationOrchestrator : IApplicationOrchestrator
                         await _store.SaveAsync(job);
                         return Reply("APP_COLLECT", field.Prompt, field.PromptAr, job, lang);
                     }
+                    if (flow.Id == FlowIds.SubmitComplaint && flow.ExternalHandoff &&
+                        (IsExternalSubmissionClaim(lowered) ||
+                         (job.Outputs.GetValueOrDefault("externalSubmissionReported") == "true" &&
+                          TryExtractExternalComplaintNumber(lowered) != null)))
+                    {
+                        var complaintNumber = TryExtractExternalComplaintNumber(lowered);
+                        CompleteExternalComplaint(job, complaintNumber, source: "customer");
+                        await _store.SaveAsync(job);
+                        return ExternalSubmissionClaimReply(job, lang);
+                    }
                     if (job.Outputs.TryGetValue("_editing", out var editing) && editing == "choose")
                     {
                         var field = MatchField(flow, lowered);
@@ -257,9 +298,20 @@ public class ApplicationOrchestrator : IApplicationOrchestrator
                     }
                     if (IsApproval(lowered))
                     {
+                        if (flow.ExternalHandoff)
+                        {
+                            if (job.Outputs.GetValueOrDefault("externalSubmissionReported") == "true")
+                                return ExternalSubmissionClaimReply(job, lang);
+                            return ExternalHandoffReply(job, flow, lang);
+                        }
                         var approved = await ApproveInternalAsync(job, flow, lang);
                         return approved;
                     }
+                    if (flow.ExternalHandoff &&
+                        job.Outputs.GetValueOrDefault("externalSubmissionReported") == "true")
+                        return ExternalSubmissionClaimReply(job, lang);
+                    if (flow.ExternalHandoff)
+                        return ExternalHandoffReply(job, flow, lang);
                     return ReviewReply(job, flow, lang,
                         "Please reply Confirm to submit, Edit to change a detail, or Cancel.",
                         "يرجى الرد بـ تأكيد للإرسال، أو تعديل لتغيير معلومة، أو إلغاء.");
@@ -279,6 +331,30 @@ public class ApplicationOrchestrator : IApplicationOrchestrator
 
     private async Task<AIPolicyResponse> HandleCollectingAsync(ApplicationJob job, FlowSpec flow, string text, string lang)
     {
+        var lowered = text.Trim().ToLowerInvariant();
+
+        // A low-confidence extraction awaiting the customer's yes/no.
+        if (job.PendingConfirmation is { } pending)
+        {
+            var field = flow.FindField(pending.FieldId);
+            job.PendingConfirmation = null;
+            if (field != null && IsAffirmative(lowered))
+            {
+                StoreValue(job, field, pending.Value, pending.Source);
+                job.AddEvent("field", $"Confirmed {field.Id} = {pending.Value}");
+                await _store.SaveAsync(job);
+                return await AdvanceAsync(job, flow, lang);
+            }
+            if (field != null && (lowered is "no" or "n" or "لا" or "كلا"))
+            {
+                job.Outputs["_editing"] = field.Id;
+                await _store.SaveAsync(job);
+                return Reply("APP_COLLECT", field.Prompt, field.PromptAr, job, lang);
+            }
+            // Anything else is treated as the corrected value for that field.
+            if (field != null) job.Outputs["_editing"] = field.Id;
+        }
+
         FieldSpec? target = null;
         if (job.Outputs.TryGetValue("_editing", out var editingId) && editingId != "choose")
             target = flow.FindField(editingId);
@@ -287,15 +363,37 @@ public class ApplicationOrchestrator : IApplicationOrchestrator
         if (target == null)
             return await AdvanceAsync(job, flow, lang);
 
-        // Opportunistically pick up extra values from a long first message.
-        var extracted = ExtractKnownValues(flow, job, text);
+        // Optional fields may be skipped.
+        if (!target.Required && target.RequiredWhen == null && (lowered is "skip" or "none" or "تخطي" or "لا يوجد"))
+        {
+            job.Data[target.Id] = string.Empty;
+            job.Provenance[target.Id] = "skipped";
+            job.Outputs.Remove("_editing");
+            await _store.SaveAsync(job);
+            return await AdvanceAsync(job, flow, lang);
+        }
+
+        // Perceive first: a long answer may carry several fields at once.
+        var summary = await ApplyExtractedSlotsAsync(job, flow, text, lang, excludeField: target.Id);
+
         var problem = _rules.Validate(target, text, out var normalized);
         if (problem != null)
         {
-            // If the message was clearly multi-field and the target was found by extraction, accept that.
-            if (extracted.TryGetValue(target.Id, out var fromExtract))
+            // The whole message is not a valid value for the target field. If extraction found
+            // the target inside it (e.g. "my mobile is 05..."), use that; otherwise re-ask.
+            var candidates = await _slots.ExtractAsync(flow, text, Array.Empty<string>(), lang);
+            var fromExtract = candidates.FirstOrDefault(c => c.FieldId == target.Id && _rules.Validate(target, c.Value, out _) == null);
+            if (fromExtract != null)
             {
-                normalized = fromExtract;
+                _rules.Validate(target, fromExtract.Value, out normalized);
+                StoreValue(job, target, normalized, fromExtract.Source);
+            }
+            else if (job.PendingConfirmation != null)
+            {
+                // Extraction asked a confirmation question; let that stand instead of a validation error.
+                await _store.SaveAsync(job);
+                var q = ConfirmationQuestion(job, flow, lang);
+                return Reply("APP_COLLECT", q.English, q.Arabic, job, lang);
             }
             else
             {
@@ -304,13 +402,77 @@ public class ApplicationOrchestrator : IApplicationOrchestrator
                 return Reply("APP_COLLECT", $"{problem.Message} {target.Prompt}", $"{problem.MessageAr} {target.PromptAr}", job, lang);
             }
         }
+        else
+        {
+            StoreValue(job, target, normalized, "typed");
+        }
 
-        StoreValue(job, target, normalized);
-        foreach (var kv in extracted) job.Data.TryAdd(kv.Key, kv.Value);
-        job.AddEvent("field", $"Collected {target.Id}" + (target.Sensitive ? string.Empty : $" = {normalized}"));
+        job.AddEvent("field", $"Collected {target.Id}" + (target.Sensitive ? string.Empty : $" = {job.Data.GetValueOrDefault(target.Id)}"));
         job.Outputs.Remove("_editing");
         await _store.SaveAsync(job);
-        return await AdvanceAsync(job, flow, lang);
+        var next = await AdvanceAsync(job, flow, lang);
+        if (!string.IsNullOrEmpty(summary?.English))
+        {
+            next.Response = summary.English + "\n\n" + next.Response;
+            next.ResponseAr = summary.Arabic + "\n\n" + next.ResponseAr;
+        }
+        return next;
+    }
+
+    private sealed record Bilingual(string English, string Arabic);
+
+    /// <summary>
+    /// Run the slot extractor over a message, validate every candidate with the rules
+    /// engine, store confident ones, queue one low-confidence candidate for confirmation,
+    /// and return a short "I've got: …" summary for the reply (null when nothing new).
+    /// </summary>
+    private async Task<Bilingual?> ApplyExtractedSlotsAsync(ApplicationJob job, FlowSpec flow, string message, string lang, string? excludeField = null)
+    {
+        var filled = job.Data.Where(kv => !string.IsNullOrWhiteSpace(kv.Value)).Select(kv => kv.Key).ToList();
+        IReadOnlyList<SlotCandidate> candidates;
+        try { candidates = await _slots.ExtractAsync(flow, message, filled, lang); }
+        catch (Exception ex) { _logger.LogWarning(ex, "Slot extraction failed; continuing without it."); return null; }
+
+        var accepted = new List<(FieldSpec Field, string Value)>();
+        SlotCandidate? toConfirm = null;
+        foreach (var c in candidates)
+        {
+            if (c.FieldId == excludeField) continue;
+            var field = flow.FindField(c.FieldId);
+            if (field == null || job.Data.ContainsKey(field.Id)) continue;
+            if (_rules.Validate(field, c.Value, out var normalized) != null) continue;  // the rulebook always wins
+            if (c.Confidence >= LlmSlotExtractor.AcceptThreshold)
+            {
+                StoreValue(job, field, normalized, c.Source);
+                accepted.Add((field, normalized));
+                job.AddEvent("field", $"Extracted {field.Id} = {normalized} ({c.Source}, {c.Confidence:0.00})");
+            }
+            else
+            {
+                toConfirm ??= c with { Value = normalized };
+            }
+        }
+
+        if (toConfirm != null && job.PendingConfirmation == null)
+        {
+            job.PendingConfirmation = new PendingSlot(toConfirm.FieldId, toConfirm.Value, toConfirm.Source);
+            job.AddEvent("info", $"Asking customer to confirm extracted {toConfirm.FieldId} ({toConfirm.Confidence:0.00})");
+        }
+        await _store.SaveAsync(job);
+
+        if (accepted.Count == 0) return null;
+        var en = "I've noted: " + string.Join("; ", accepted.Select(a => $"{a.Field.Label}: {a.Value}")) + ".";
+        var ar = "سجلت: " + string.Join("؛ ", accepted.Select(a => $"{a.Field.LabelAr}: {a.Value}")) + ".";
+        return new Bilingual(en, ar);
+    }
+
+    private static Bilingual ConfirmationQuestion(ApplicationJob job, FlowSpec flow, string lang)
+    {
+        var p = job.PendingConfirmation!;
+        var field = flow.FindField(p.FieldId)!;
+        return new Bilingual(
+            $"I read your {field.Label.ToLowerInvariant()} as \"{p.Value}\". Is that right? (yes / no, or type the correct value)",
+            $"فهمت أن {field.LabelAr} هو \"{p.Value}\". هل هذا صحيح؟ (نعم / لا، أو اكتب القيمة الصحيحة)");
     }
 
     // ---------------------------------------------------------------- advance
@@ -318,6 +480,14 @@ public class ApplicationOrchestrator : IApplicationOrchestrator
     /// <summary>Decide the next step from the job's current data and status.</summary>
     private async Task<AIPolicyResponse> AdvanceAsync(ApplicationJob job, FlowSpec flow, string lang)
     {
+        if (job.PendingConfirmation != null)
+        {
+            if (job.Status == JobStatus.Validating) job.TryTransition(JobStatus.Collecting, "confirmation pending");
+            await _store.SaveAsync(job);
+            var q = ConfirmationQuestion(job, flow, lang);
+            return Reply("APP_COLLECT", q.English, q.Arabic, job, lang);
+        }
+
         var missing = NextMissingField(job, flow);
         if (missing != null)
         {
@@ -337,6 +507,13 @@ public class ApplicationOrchestrator : IApplicationOrchestrator
             job.Outputs["_editing"] = field.Id;
             await _store.SaveAsync(job);
             return Reply("APP_COLLECT", $"{first.Message} {field.Prompt}", $"{first.MessageAr} {field.PromptAr}", job, lang);
+        }
+
+        if (flow.ExternalHandoff)
+        {
+            job.TryTransition(JobStatus.AwaitingApproval, "details ready for customer-controlled external form submission");
+            await _store.SaveAsync(job);
+            return ExternalHandoffReply(job, flow, lang);
         }
 
         if (flow.RequiresLogin && job.LoginCompletedAt == null)
@@ -419,6 +596,9 @@ public class ApplicationOrchestrator : IApplicationOrchestrator
 
     private async Task<AIPolicyResponse> ApproveInternalAsync(ApplicationJob job, FlowSpec flow, string lang)
     {
+        if (flow.ExternalHandoff)
+            return ExternalHandoffReply(job, flow, lang);
+
         if (job.SubmitAttempted)
         {
             return Reply(StageFor(job), "This request was already submitted; I won't send it twice.", "تم إرسال هذا الطلب مسبقاً؛ لن أرسله مرتين.", job, lang);
@@ -547,6 +727,7 @@ public class ApplicationOrchestrator : IApplicationOrchestrator
             Status = job.Status,
             StatusMessage = msg,
             StatusMessageAr = msgAr,
+            PendingConfirmationField = job.PendingConfirmation?.FieldId,
             MissingFields = missing,
             ValidationErrors = problems,
             Data = job.Data.Where(kv => flow?.FindField(kv.Key)?.Sensitive != true).ToDictionary(kv => kv.Key, kv => kv.Value),
@@ -568,8 +749,9 @@ public class ApplicationOrchestrator : IApplicationOrchestrator
     /// the customer used ("yyyy-MM-dd|hijri"); keep the Gregorian date in the field and
     /// the calendar in a sibling key so re-validation and the portal fill both work.
     /// </summary>
-    private static void StoreValue(ApplicationJob job, FieldSpec field, string normalized)
+    private static void StoreValue(ApplicationJob job, FieldSpec field, string normalized, string source = "typed")
     {
+        job.Provenance[field.Id] = source;
         if (field.Rule == "date_of_birth" && normalized.Contains('|'))
         {
             var parts = normalized.Split('|', 2);
@@ -613,25 +795,31 @@ public class ApplicationOrchestrator : IApplicationOrchestrator
         return $"{done}/{required.Count}";
     }
 
-    /// <summary>Regex pickup of unambiguous values (ID, mobile, email, dates) so a chatty first message isn't wasted.</summary>
-    private Dictionary<string, string> ExtractKnownValues(FlowSpec flow, ApplicationJob job, string text)
+    /// <summary>
+    /// The customer pasted wording from the portal's tracking result ("Status: Under review").
+    /// Returns the status text, or null. Nothing here is verified against the portal.
+    /// </summary>
+    private static string? TryExtractClaimStatusReport(string text)
     {
-        var found = new Dictionary<string, string>();
-        void Try(string fieldId, string pattern)
-        {
-            var field = flow.FindField(fieldId);
-            if (field == null || job.Data.ContainsKey(fieldId)) return;
-            var m = Regex.Match(text, pattern);
-            if (m.Success && _rules.Validate(field, m.Value, out var normalized) == null) found[fieldId] = normalized;
-        }
-        Try("national_id", @"\b[12]\d{9}\b");
-        Try("mobile", @"(\+?966|0)?5\d{8}\b");
-        Try("email", @"[^@\s]+@[^@\s]+\.[^@\s]{2,}");
-        // Only accept prefixed references that contain at least one digit, so ordinary
-        // uppercase words ("PLEASE") are never mistaken for a reference.
-        Try("policy_number", @"\b(?:POL|MTK)[-/]?(?=[A-Z0-9-]*\d)[A-Z0-9-]{4,}\b");
-        Try("claim_number", @"\b(?:CLM|CL)[-/]?(?=[A-Z0-9-]*\d)[A-Z0-9-]{4,}\b");
-        return found;
+        var m = Regex.Match(text, @"(?:claim\s+)?status(?:\s+is|\s+shows|\s*[:\-–])\s*(?<s>[^\n.;]{3,80})|(?:حالة(?:\s+المطالبة)?\s*[:\-–]?\s*)(?<s>[^\n.;]{3,80})", RegexOptions.IgnoreCase);
+        if (!m.Success) return null;
+        var status = m.Groups["s"].Value.Trim().Trim('"', '\'', '«', '»').ToLowerInvariant();
+        return status.Length < 3 ? null : status;
+    }
+
+    /// <summary>Customer says they submitted the external (website) form themselves.</summary>
+    private static bool IsExternalSubmissionClaim(string m) =>
+        m is "submitted" or "done" or "complaint submitted" or "i submitted the complaint" or "i have submitted the complaint" or
+             "تم الإرسال" or "أرسلت الشكوى" or "ارسلت الشكوى" ||
+        m.StartsWith("i submitted ") || m.StartsWith("i've submitted ") || m.StartsWith("i have submitted ") ||
+        m.StartsWith("complaint submitted ") || m.StartsWith("submitted ") || m.StartsWith("أرسلت ") || m.StartsWith("ارسلت ") ||
+        (m.Contains("submitted") && m.Contains("complaint"));
+
+    /// <summary>A 6–12 digit reference quoted by the customer after submitting on the website.</summary>
+    private static string? TryExtractExternalComplaintNumber(string m)
+    {
+        var match = Regex.Match(m, @"\b\d{6,12}\b");
+        return match.Success ? match.Value : null;
     }
 
     private static bool IsCancel(string m) => m is "cancel" or "stop" or "إلغاء" or "الغاء" || m.StartsWith("cancel ") || m.Contains("never mind");
@@ -666,8 +854,9 @@ public class ApplicationOrchestrator : IApplicationOrchestrator
 
     private static (string English, string Arabic) IntroFor(FlowSpec flow, string lang) => flow.Id switch
     {
-        FlowIds.TrackAClaim => ("I'll check your claim status on the Mutakamela portal.", "سأتحقق من حالة مطالبتك على بوابة متكاملة."),
-        FlowIds.MakeAClaim => ("I'll prepare your motor claim and fill it in on the Mutakamela portal. You'll review everything before anything is submitted.", "سأجهّز مطالبة المركبات وأعبئها على بوابة متكاملة. ستراجع كل شيء قبل الإرسال."),
+        FlowIds.SubmitComplaint => ("I'll collect the details for Mutakamela's complaint form. If the browser extension is installed, it will open the form and fill supported fields. You will review and submit it yourself; nothing will be sent automatically.", "سأجمع بيانات نموذج الشكاوى لمتكاملة. إذا كان امتداد المتصفح مثبتاً، فسيفتح النموذج ويعبئ الحقول المدعومة. ستراجع البيانات وترسلها بنفسك؛ لن يتم إرسال أي شيء تلقائياً."),
+        FlowIds.TrackAClaim => ("I’ll help you track an existing claim. I’ll ask only for the claim number; enter your ID/Iqama/CR on Mutakamela’s official page yourself.", "سأساعدك في تتبع مطالبة قائمة. سأطلب رقم المطالبة فقط؛ أدخل رقم الهوية/الإقامة/السجل التجاري بنفسك في صفحة متكاملة الرسمية."),
+        FlowIds.MakeAClaim => ("I’ll open Mutakamela’s official motor-claim page. Enter your identity details and make the consent decision directly on the portal; the chatbot won’t accept the authorization or submit a claim.", "سأفتح صفحة مطالبة المركبات الرسمية لمتكاملة. أدخل بيانات هويتك واتخذ قرار الموافقة مباشرة على البوابة؛ لن يوافق المساعد على التفويض أو يرسل مطالبة."),
         FlowIds.BuyMotorInsurance => ("Let's get you a motor insurance quote. I'll fill the portal for you and stop at the payment page, which you complete yourself.", "لنحصل على عرض سعر لتأمين المركبات. سأعبئ البوابة نيابة عنك وأتوقف عند صفحة الدفع التي تكملها بنفسك."),
         FlowIds.PersonalInfo => ("I'll update your personal details on the portal. You'll confirm before anything is saved.", "سأحدّث بياناتك الشخصية على البوابة. ستؤكد قبل حفظ أي شيء."),
         _ => ($"Starting: {flow.Title}.", $"بدء: {flow.TitleAr}.")
@@ -679,8 +868,11 @@ public class ApplicationOrchestrator : IApplicationOrchestrator
         JobStatus.Validating => ("Checking details", "التحقق من البيانات"),
         JobStatus.AwaitingLogin => ("Waiting for you to log in to the portal", "بانتظار تسجيل دخولك إلى البوابة"),
         JobStatus.Filling => job.Outputs.ContainsKey("payment_url") ? ("Waiting for payment", "بانتظار الدفع") : ("Filling the portal", "تعبئة البوابة"),
+        JobStatus.AwaitingApproval when flow?.ExternalHandoff == true => ("Ready for your review on Mutakamela's website", "جاهز لمراجعته على موقع متكاملة"),
         JobStatus.AwaitingApproval => ("Waiting for your approval", "بانتظار موافقتك"),
         JobStatus.Submitting => ("Submitting", "جارٍ الإرسال"),
+        JobStatus.Done when job.Outputs.GetValueOrDefault("externalSubmissionReported") == "true" =>
+            ("Complaint submitted on Mutakamela's website", "تم إرسال الشكوى على موقع متكاملة"),
         JobStatus.Done => ("Done", "اكتمل"),
         JobStatus.Failed => ("Failed safely — nothing submitted", "فشل بأمان — لم يُرسل شيء"),
         _ => ("Cancelled", "ملغى")
@@ -691,17 +883,21 @@ public class ApplicationOrchestrator : IApplicationOrchestrator
         var review = new ReviewSummary
         {
             FinalScreenshotPath = job.Outputs.GetValueOrDefault("_final_screenshot"),
-            Disclaimer = _browser.Name == "simulated"
+            Disclaimer = flow.ExternalHandoff
+                ? HandoffDisclaimer(flow.Id, "en")
+                : _browser.Name == "simulated"
                 ? "Simulation mode: the portal was not contacted. Values marked (simulated) are placeholders."
                 : "Nothing is submitted until you confirm.",
-            DisclaimerAr = _browser.Name == "simulated"
+            DisclaimerAr = flow.ExternalHandoff
+                ? HandoffDisclaimer(flow.Id, "ar")
+                : _browser.Name == "simulated"
                 ? "وضع المحاكاة: لم يتم الاتصال بالبوابة. القيم الموسومة (simulated) تجريبية."
                 : "لن يُرسل أي شيء حتى تؤكد."
         };
         foreach (var field in flow.AllFields)
         {
             if (field.Sensitive || !job.Data.TryGetValue(field.Id, out var value) || string.IsNullOrWhiteSpace(value)) continue;
-            review.Lines.Add(new ReviewLine { Field = field.Id, Label = field.Label, LabelAr = field.LabelAr, Value = value, Source = field.Source });
+            review.Lines.Add(new ReviewLine { Field = field.Id, Label = field.Label, LabelAr = field.LabelAr, Value = value, Source = job.Provenance.GetValueOrDefault(field.Id, field.Source) });
         }
         foreach (var output in flow.Outputs)
         {
@@ -724,6 +920,80 @@ public class ApplicationOrchestrator : IApplicationOrchestrator
         en.AppendLine().Append(review.Disclaimer);
         ar.AppendLine().Append(review.DisclaimerAr);
         return Reply("APP_REVIEW", en.ToString().TrimEnd(), ar.ToString().TrimEnd(), job, lang);
+    }
+
+    private AIPolicyResponse ExternalHandoffReply(ApplicationJob job, FlowSpec flow, string lang) =>
+        Reply("APP_REVIEW",
+            ExternalHandoffMessage(flow, "en"),
+            ExternalHandoffMessage(flow, "ar"),
+            job, lang);
+
+    private static string ExternalHandoffMessage(FlowSpec flow, string lang) => flow.Id switch
+    {
+        FlowIds.TrackAClaim when lang == "ar" =>
+            $"رقم المطالبة جاهز في نموذج التتبع الرسمي: {flow.Url}\nأدخل رقم الهوية/الإقامة/السجل التجاري بنفسك، وتحقق من الحقول، ثم اضغط «Track Status» بنفسك. لم يرسل chatbot استعلاماً ولم يتحقق من الحالة. أرسل النتيجة هنا إذا أردت المساعدة في فهمها.",
+        FlowIds.TrackAClaim =>
+            $"Your claim number is ready in Mutakamela’s official tracking form: {flow.Url}\nEnter your ID/Iqama/CR yourself, review the fields, and click Track Status yourself. The chatbot has not sent a lookup or verified the status. Share the result here if you’d like help understanding it.",
+        FlowIds.MakeAClaim when lang == "ar" =>
+            $"افتح نموذج مطالبة المركبات الرسمي: {flow.Url}\nأدخل بيانات الهوية وتاريخ الميلاد هناك. راجع نص التفويض واتخذ قرار الموافقة بنفسك، ثم أكمل تفاصيل المطالبة وأرسلها بنفسك. لم يُرسل أي شيء من هذه المحادثة.",
+        FlowIds.MakeAClaim =>
+            $"Open Mutakamela’s official motor-claim form: {flow.Url}\nEnter your identity details and date of birth there. Read the authorization and make that consent decision yourself, then complete the claim details and submit them yourself. Nothing was submitted by this chat.",
+        _ when lang == "ar" =>
+            $"بيانات الشكوى جاهزة. افتح النموذج الرسمي عبر {flow.Url} وراجع جميع الحقول وأكمل أي بيانات ناقصة، ثم اضغط إرسال هناك عندما تكون مستعداً. لم يتم إرسال أي شيء من هذه المحادثة.",
+        _ =>
+            $"Your complaint details are ready. Open the official form at {flow.Url}, review all fields, complete anything missing, and click Submit there when you are ready. This chat has not submitted anything."
+    };
+
+    private static string HandoffDisclaimer(string flowId, string lang) => (flowId, lang) switch
+    {
+        (FlowIds.TrackAClaim, "ar") => "أدخل هويتك واضغط «Track Status» بنفسك على موقع متكاملة؛ لم يرسل chatbot استعلاماً ولم يتحقق من الحالة.",
+        (FlowIds.TrackAClaim, _) => "Enter your ID and click Track Status yourself on Mutakamela’s site; the chatbot did not send a lookup or verify the status.",
+        (FlowIds.MakeAClaim, "ar") => "اتخذ قرار التفويض وأرسل المطالبة بنفسك على موقع متكاملة. لم يتم إرسال أي شيء من هذه المحادثة.",
+        (FlowIds.MakeAClaim, _) => "Make the authorization decision and submit the claim yourself on Mutakamela’s site. Nothing was submitted by this chat.",
+        (_, "ar") => "راجع جميع الحقول على موقع متكاملة وأرسل النموذج بنفسك. لم يتم إرسال أي شيء من هذه المحادثة.",
+        _ => "Review all fields on Mutakamela's website and submit them there yourself. Nothing was submitted by this chat."
+    };
+
+    /// <summary>
+    /// The external complaint form was submitted on Mutakamela's website (reported by the
+    /// customer, or relayed by the browser extension). Record the number and close the job
+    /// so the customer is free to do anything else; later messages go back to normal chat.
+    /// </summary>
+    private static void CompleteExternalComplaint(ApplicationJob job, string? complaintNumber, string source)
+    {
+        job.Outputs["externalSubmissionReported"] = "true";
+        job.Outputs["externalSubmissionSource"] = source;
+        if (!string.IsNullOrEmpty(complaintNumber))
+        {
+            job.Outputs["complaintNumber"] = complaintNumber;
+            job.ReferenceNumber = complaintNumber;
+        }
+        job.AddEvent("info", source == "portal"
+            ? $"Browser extension relayed the portal's success confirmation{(complaintNumber == null ? string.Empty : $" with complaint number {complaintNumber}")}."
+            : $"Customer reported submitting the external complaint form{(complaintNumber == null ? string.Empty : $" with complaint number {complaintNumber}")}; portal confirmation was not received.");
+        job.TryTransition(JobStatus.Done, "complaint submitted by the customer on Mutakamela's website");
+    }
+
+    public async Task<ApplicationJobResponse?> ConfirmExternalSubmissionAsync(string jobId, string? complaintNumber, string lang)
+    {
+        var job = await _store.GetAsync(jobId);
+        if (job == null) return null;
+        var flow = _flows.Get(job.FlowId);
+        if (flow == null || !flow.ExternalHandoff || job.IsTerminal) return ToResponse(job, lang);
+        CompleteExternalComplaint(job, complaintNumber, source: "portal");
+        await _store.SaveAsync(job);
+        return ToResponse(job, lang);
+    }
+
+    private AIPolicyResponse ExternalSubmissionClaimReply(ApplicationJob job, string lang)
+    {
+        var complaintNumber = job.Outputs.GetValueOrDefault("complaintNumber");
+        var numberEn = complaintNumber == null ? string.Empty : $" Complaint number: {complaintNumber}.";
+        var numberAr = complaintNumber == null ? string.Empty : $" رقم الشكوى: {complaintNumber}.";
+        return Reply("APP_DONE",
+            $"Thanks for letting me know.{numberEn} If Mutakamela displayed a successful receipt, your complaint was submitted; keep the number for follow-up. This chat cannot independently verify the portal submission. Your complaint request is now closed. Is there anything else I can help you with?",
+            $"شكراً لإخباري.{numberAr} إذا عرضت متكاملة رسالة استلام ناجحة، فقد تم إرسال شكواك؛ احتفظ بالرقم للمتابعة. لا يمكن لهذه المحادثة التحقق بشكل مستقل من الإرسال عبر البوابة. تم إغلاق طلب الشكوى الآن. هل هناك شيء آخر يمكنني مساعدتك به؟",
+            job, lang);
     }
 
     private AIPolicyResponse PaymentReply(ApplicationJob job, FlowSpec flow, string lang)

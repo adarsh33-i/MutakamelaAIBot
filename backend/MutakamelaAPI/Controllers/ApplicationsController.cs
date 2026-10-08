@@ -24,12 +24,16 @@ public class ApplicationsController : ControllerBase
         _flows = flows;
     }
 
-    /// <summary>Journeys the engine knows about, with their field lists (no selectors).</summary>
+    /// <summary>Journeys and field metadata used by the browser extension to fill verified portal forms.</summary>
     [HttpGet("flows")]
     public IActionResult GetFlows() => Ok(_flows.All.Select(f => new
     {
-        f.Id, f.Title, f.TitleAr, f.Url, f.Kind, f.RequiresLogin, f.RequiresApproval, f.Verified,
-        Fields = f.AllFields.Select(x => new { x.Id, x.Label, x.LabelAr, x.Type, x.Required, x.Source })
+        f.Id, f.Title, f.TitleAr, f.Url, f.Kind, f.RequiresLogin, f.RequiresApproval, f.ExternalHandoff, f.Verified,
+        Fields = f.AllFields.Select(x => new
+        {
+            x.Id, x.Label, x.LabelAr, x.Type, x.Required, x.Source, x.Sensitive,
+            x.Selectors
+        })
     }));
 
     [HttpGet]
@@ -73,6 +77,17 @@ public class ApplicationsController : ControllerBase
     public async Task<IActionResult> Approve(string id, [FromQuery] string language = "en")
     {
         var job = await _orchestrator.ApproveAsync(id, Lang(language));
+        return job == null ? NotFound() : Ok(job);
+    }
+
+    /// <summary>Called by the chat widget when the browser extension relays the portal's success banner.</summary>
+    [HttpPost("{id}/external-submitted")]
+    public async Task<IActionResult> ExternalSubmitted(string id, [FromBody] ExternalSubmissionRequest? request, [FromQuery] string language = "en")
+    {
+        var number = request?.ComplaintNumber?.Trim();
+        if (!string.IsNullOrEmpty(number) && !System.Text.RegularExpressions.Regex.IsMatch(number, "^[A-Za-z0-9-]{4,40}$"))
+            return BadRequest(new { error = "Invalid complaint number." });
+        var job = await _orchestrator.ConfirmExternalSubmissionAsync(id, string.IsNullOrEmpty(number) ? null : number, Lang(language));
         return job == null ? NotFound() : Ok(job);
     }
 

@@ -19,7 +19,42 @@
       "tagline": "Dependable Coverage, Every Time",
       "description": "Explore the road with ultimate peace of mind. Flexible motor insurance products designed to cover all your driving needs with comprehensive protection for your vehicle against accidents, theft, and third-party liability.",
       "description_ar": "استكشف الطريق براحة بال تامة. منتجات تأمين مركبات مرنة مصممة لتغطية جميع احتياجات القيادة مع حماية شاملة لمركبتك ضد الحوادث والسرقة ومسؤولية الطرف الثالث.",
-      "keywords": ["car", "vehicle", "motor", "driving", "accident", "سيارة", "مركبة", "حادث", "قيادة", "toyota", "camry", "honda", "collision", "theft", "roadside", "breakdown", "broke down", "stuck", "stranded", "towing", "tow truck", "flat tyre", "flat tire", "battery", "out of fuel", "مساعدة على الطريق", "تعطلت", "عالقة", "عالق", "سطحة", "ونش", "بنشر", "بطارية", "بنزين"],
+      "keywords": [
+        "car",
+        "vehicle",
+        "motor",
+        "driving",
+        "accident",
+        "سيارة",
+        "مركبة",
+        "حادث",
+        "قيادة",
+        "toyota",
+        "camry",
+        "honda",
+        "collision",
+        "theft",
+        "roadside",
+        "breakdown",
+        "broke down",
+        "stuck",
+        "stranded",
+        "towing",
+        "tow truck",
+        "flat tyre",
+        "flat tire",
+        "battery",
+        "out of fuel",
+        "مساعدة على الطريق",
+        "تعطلت",
+        "عالقة",
+        "عالق",
+        "سطحة",
+        "ونش",
+        "بنشر",
+        "بطارية",
+        "بنزين"
+      ],
       "coverage": [
         "Third Party Liability - covers injury/damage to others",
         "Own Damage - covers your vehicle damage",
@@ -28,9 +63,62 @@
         "Natural Disasters - covers floods, storms",
         "Personal Accident - covers driver injuries"
       ],
-      "features": ["Online policy purchase", "Easy claims via eServices portal", "24/7 roadside assistance", "Quick claim settlement"],
-      "suitable_for": ["Individual car owners", "Daily commuters", "New vehicle owners", "Fleet owners"],
-      "url": "https://mutakamela.sa/motor-insurance/"
+      "features": [
+        "Online policy purchase",
+        "Easy claims via eServices portal",
+        "24/7 roadside assistance",
+        "Quick claim settlement"
+      ],
+      "suitable_for": [
+        "Individual car owners",
+        "Daily commuters",
+        "New vehicle owners",
+        "Fleet owners"
+      ],
+      "url": "https://mutakamela.sa/motor-insurance/",
+      "situations": [
+        "car broke down",
+        "stuck on the road",
+        "stranded",
+        "car won't start",
+        "flat tyre",
+        "dead battery",
+        "towing",
+        "tow truck",
+        "roadside help",
+        "car accident",
+        "scratch on my car",
+        "hit another car",
+        "my car was stolen",
+        "vehicle fire",
+        "flood damaged my car",
+        "Najm report",
+        "renew car insurance",
+        "third party insurance",
+        "comprehensive insurance",
+        "driving licence",
+        "istimara"
+      ],
+      "situations_ar": [
+        "تعطلت سيارتي",
+        "عالق على الطريق",
+        "سيارتي ما تشتغل",
+        "بنشر",
+        "بطارية فاضية",
+        "سطحة",
+        "ونش",
+        "حادث سيارة",
+        "خدش",
+        "صدمت سيارة",
+        "سرقت سيارتي",
+        "حريق مركبة",
+        "غرقت سيارتي",
+        "تقرير نجم",
+        "تجديد تأمين السيارة",
+        "ضد الغير",
+        "شامل",
+        "استمارة"
+      ]
     },
     {
       "id": "IND-TRV-001",
@@ -41,7 +129,21 @@
       "tagline": "Travel with Confidence",
       "description": "Protect yourself against unforeseen accidents or disruptions that might affect the trip of your dreams. Family packages include free coverage for children, ensuring the whole family travels worry-free.",
       "description_ar": "احمِ نفسك من الحوادث أو الاضطرابات غير المتوقعة التي قد تؤثر على رحلة أحلامك. تشمل باقات العائلة تغطية مجانية للأطفال، مما يضمن سفر العائلة بأكملها دون قلق.",
-      "keywords": ["travel", "trip", "vacation", "holiday", "abroad", "flight", "سفر", "رحلة", "إجازة", "طيران", "europe", "usa", "asia"],
+      "keywords": [
+        "travel",
+        "trip",
+        "vacation",
+        "holiday",
+        "abroad",
+        "flight",
+        "سفر",
+        "رحلة",
+        "إجازة",
+        "طيران",
+        "europe",
+        "usa",
+        "asia"
+      ],
       "coverage": [
         "Medical Emergencies abroad",
         "Trip Cancellation reimbursement",
@@ -50,9 +152,47 @@
         "Free Children Coverage in family packages",
         "Emergency evacuation"
       ],
-      "features": ["Online purchase", "Instant policy issuance", "Free kids coverage", "Global network hospitals"],
-      "suitable_for": ["Vacationers", "Family travelers", "Business travelers", "Adventure seekers"],
-      "url": "https://mutakamela.sa/travel-insurance/"
+      "features": [
+        "Online purchase",
+        "Instant policy issuance",
+        "Free kids coverage",
+        "Global network hospitals"
+      ],
+      "suitable_for": [
+        "Vacationers",
+        "Family travelers",
+        "Business travelers",
+        "Adventure seekers"
+      ],
+      "url": "https://mutakamela.sa/travel-insurance/",
+      "situations": [
+        "going on holiday",
+        "vacation abroad",
+        "family trip",
+        "flight cancelled",
+        "flight delayed",
+        "lost my luggage",
+        "baggage delayed",
+        "got sick abroad",
+        "hospital overseas",
+        "medical emergency while travelling",
+        "trip cancellation",
+        "umrah trip",
+        "business travel"
+      ],
+      "situations_ar": [
+        "سفر",
+        "إجازة خارج المملكة",
+        "رحلة عائلية",
+        "إلغاء الرحلة",
+        "تأخير الطيران",
+        "ضاعت شنطتي",
+        "تأخر الأمتعة",
+        "مرضت في الخارج",
+        "مستشفى خارج المملكة",
+        "طوارئ طبية أثناء السفر",
+        "سفر عمل"
+      ]
     },
     {
       "id": "IND-TRV-002",
@@ -63,7 +203,18 @@
       "tagline": "Hassle-free Visa Compliance",
       "description": "Specialized travel coverage for visa holders with flexible options to activate, extend, or cancel policies online. Perfect for Schengen visa applicants and visitors requiring mandatory travel insurance.",
       "description_ar": "تغطية سفر متخصصة لحاملي التأشيرات مع خيارات مرنة لتفعيل أو تمديد أو إلغاء الوثائق إلكترونياً. مثالية لمتقدمي تأشيرة شنغن والزوار الذين يحتاجون تأمين سفر إلزامي.",
-      "keywords": ["visa", "visit", "visitor", "tourist", "تأشيرة", "زيارة", "سائح", "schengen", "europe visa", "embassy"],
+      "keywords": [
+        "visa",
+        "visit",
+        "visitor",
+        "tourist",
+        "تأشيرة",
+        "زيارة",
+        "سائح",
+        "schengen",
+        "europe visa",
+        "embassy"
+      ],
       "coverage": [
         "Medical Coverage up to EUR 30,000+",
         "Visa Compliance documentation",
@@ -71,9 +222,39 @@
         "Emergency medical expenses",
         "Policy extension option"
       ],
-      "features": ["Online management", "Instant certificate", "Embassy accepted", "Easy extension"],
-      "suitable_for": ["Schengen visa applicants", "Tourists visiting Saudi", "Business visa holders", "Embassy requirements"],
-      "url": "https://mutakamela.sa/individual-products/"
+      "features": [
+        "Online management",
+        "Instant certificate",
+        "Embassy accepted",
+        "Easy extension"
+      ],
+      "suitable_for": [
+        "Schengen visa applicants",
+        "Tourists visiting Saudi",
+        "Business visa holders",
+        "Embassy requirements"
+      ],
+      "url": "https://mutakamela.sa/individual-products/",
+      "situations": [
+        "schengen visa",
+        "visa application",
+        "visitor visa insurance",
+        "inbound visitor",
+        "visiting Saudi",
+        "embassy requires insurance",
+        "extend my visa insurance",
+        "tourist visa",
+        "business visa"
+      ],
+      "situations_ar": [
+        "تأشيرة شنغن",
+        "تأمين تأشيرة",
+        "تأشيرة زيارة",
+        "زائر للمملكة",
+        "السفارة تطلب تأمين",
+        "تمديد تأمين التأشيرة",
+        "تأشيرة سياحية"
+      ]
     },
     {
       "id": "IND-SAV-001",
@@ -84,7 +265,20 @@
       "tagline": "Invest in Your Child's Future",
       "description": "Sharia-compliant education savings plan that combines security and investment to cover university tuition fees for your children. Start planning today to give your children the best educational opportunities tomorrow.",
       "description_ar": "خطة ادخار تعليمية متوافقة مع الشريعة تجمع بين الأمان والاستثمار لتغطية رسوم الجامعة لأطفالك. ابدأ التخطيط اليوم لمنح أطفالك أفضل الفرص التعليمية غداً.",
-      "keywords": ["education", "savings", "university", "children", "tuition", "تعليم", "ادخار", "جامعة", "أطفال", "رسوم", "school", "college"],
+      "keywords": [
+        "education",
+        "savings",
+        "university",
+        "children",
+        "tuition",
+        "تعليم",
+        "ادخار",
+        "جامعة",
+        "أطفال",
+        "رسوم",
+        "school",
+        "college"
+      ],
       "coverage": [
         "University tuition fees coverage",
         "Investment returns (Sharia-compliant)",
@@ -92,9 +286,37 @@
         "Guaranteed maturity benefit",
         "Flexible premium payments"
       ],
-      "features": ["Sharia compliant", "Tax-free returns", "Flexible terms", "Life coverage included"],
-      "suitable_for": ["Parents with young children", "Long-term planners", "Education-focused families"],
-      "url": "https://mutakamela.sa/individual-products/"
+      "features": [
+        "Sharia compliant",
+        "Tax-free returns",
+        "Flexible terms",
+        "Life coverage included"
+      ],
+      "suitable_for": [
+        "Parents with young children",
+        "Long-term planners",
+        "Education-focused families"
+      ],
+      "url": "https://mutakamela.sa/individual-products/",
+      "situations": [
+        "save for my child's education",
+        "college fund",
+        "university fees",
+        "kids future",
+        "school fees plan",
+        "education savings",
+        "child plan"
+      ],
+      "situations_ar": [
+        "ادخار لتعليم أطفالي",
+        "رسوم الجامعة",
+        "مستقبل الأطفال",
+        "خطة تعليم",
+        "ادخار تعليمي",
+        "ادخار لأولادي",
+        "مستقبل أولادي",
+        "دراسة أبنائي"
+      ]
     },
     {
       "id": "IND-SAV-002",
@@ -105,7 +327,18 @@
       "tagline": "Financial Freedom for Your Golden Years",
       "description": "Sharia-compliant retirement savings solution offering financial freedom and confidence to continue living life on your terms after retirement. Build your nest egg with steady, ethical investments.",
       "description_ar": "حل ادخار تقاعدي متوافق مع الشريعة يوفر الحرية المالية والثقة لمواصلة العيش بالطريقة التي تريدها بعد التقاعد. ابنِ مدخراتك باستثمارات ثابتة وأخلاقية.",
-      "keywords": ["retirement", "pension", "savings", "future", "تقاعد", "معاش", "ادخار", "مستقبل", "senior", "golden years"],
+      "keywords": [
+        "retirement",
+        "pension",
+        "savings",
+        "future",
+        "تقاعد",
+        "معاش",
+        "ادخار",
+        "مستقبل",
+        "senior",
+        "golden years"
+      ],
       "coverage": [
         "Retirement income stream",
         "Investment growth (Sharia-compliant)",
@@ -113,9 +346,34 @@
         "Lump sum or annuity options",
         "Flexible contribution schedule"
       ],
-      "features": ["Sharia compliant", "Flexible withdrawal", "Life coverage", "Professional fund management"],
-      "suitable_for": ["Working professionals", "Pre-retirees (45+)", "Long-term savers", "Self-employed"],
-      "url": "https://mutakamela.sa/individual-products/"
+      "features": [
+        "Sharia compliant",
+        "Flexible withdrawal",
+        "Life coverage",
+        "Professional fund management"
+      ],
+      "suitable_for": [
+        "Working professionals",
+        "Pre-retirees (45+)",
+        "Long-term savers",
+        "Self-employed"
+      ],
+      "url": "https://mutakamela.sa/individual-products/",
+      "situations": [
+        "retirement plan",
+        "pension",
+        "save for retirement",
+        "income after 60",
+        "long term savings",
+        "investment plan with protection"
+      ],
+      "situations_ar": [
+        "تقاعد",
+        "معاش",
+        "ادخار للتقاعد",
+        "دخل بعد التقاعد",
+        "ادخار طويل الأجل"
+      ]
     },
     {
       "id": "IND-PRO-001",
@@ -126,7 +384,18 @@
       "tagline": "Protect What Matters Most",
       "description": "Flexible Sharia-compliant protection plan allowing families to care for loved ones as life circumstances change. Ensures your family's financial security in case of unexpected events.",
       "description_ar": "خطة حماية مرنة متوافقة مع الشريعة تتيح للعائلات رعاية أحبائهم مع تغير ظروف الحياة. تضمن الأمان المالي لعائلتك في حالة الأحداث غير المتوقعة.",
-      "keywords": ["family", "protection", "life", "عائلة", "حماية", "حياة", "أسرة", "loved ones", "security", "death benefit"],
+      "keywords": [
+        "family",
+        "protection",
+        "life",
+        "عائلة",
+        "حماية",
+        "حياة",
+        "أسرة",
+        "loved ones",
+        "security",
+        "death benefit"
+      ],
       "coverage": [
         "Life protection benefit",
         "Critical illness coverage",
@@ -134,9 +403,35 @@
         "Flexible benefit options",
         "Accidental death benefit"
       ],
-      "features": ["Sharia compliant", "Flexible coverage", "Multiple benefit options", "Easy claims"],
-      "suitable_for": ["Families", "Breadwinners", "Parents", "Married couples"],
-      "url": "https://mutakamela.sa/individual-products/"
+      "features": [
+        "Sharia compliant",
+        "Flexible coverage",
+        "Multiple benefit options",
+        "Easy claims"
+      ],
+      "suitable_for": [
+        "Families",
+        "Breadwinners",
+        "Parents",
+        "Married couples"
+      ],
+      "url": "https://mutakamela.sa/individual-products/",
+      "situations": [
+        "life insurance",
+        "protect my family if I die",
+        "family protection",
+        "breadwinner cover",
+        "death benefit",
+        "term life",
+        "disability cover for family"
+      ],
+      "situations_ar": [
+        "تأمين على الحياة",
+        "حماية عائلتي",
+        "معيل الأسرة",
+        "تعويض وفاة",
+        "تأمين حماية الأسرة"
+      ]
     },
     {
       "id": "CORP-HLT-001",
@@ -147,7 +442,20 @@
       "tagline": "Comprehensive Care for Your Team",
       "description": "Highly flexible health insurance plans with various classes ensuring proper medical care for employees and their families. Access to wide network of hospitals and clinics across Saudi Arabia through TPAs Nextcare and GlobeMed.",
       "description_ar": "خطط تأمين صحي مرنة للغاية مع فئات متعددة تضمن الرعاية الطبية المناسبة للموظفين وعائلاتهم. الوصول إلى شبكة واسعة من المستشفيات والعيادات في جميع أنحاء المملكة.",
-      "keywords": ["health", "medical", "employees", "corporate", "hospital", "صحي", "طبي", "موظفين", "شركة", "مستشفى", "staff", "team"],
+      "keywords": [
+        "health",
+        "medical",
+        "employees",
+        "corporate",
+        "hospital",
+        "صحي",
+        "طبي",
+        "موظفين",
+        "شركة",
+        "مستشفى",
+        "staff",
+        "team"
+      ],
       "coverage": [
         "Inpatient hospitalization",
         "Outpatient consultations",
@@ -157,10 +465,37 @@
         "Maternity coverage (optional)",
         "Dental and optical (optional)"
       ],
-      "tpa": ["Nextcare", "GlobeMed"],
-      "features": ["Wide hospital network", "Multiple plan classes", "Family extension", "24/7 support"],
-      "suitable_for": ["Large corporations", "Medium enterprises", "Government entities"],
-      "url": "https://mutakamela.sa/health-insurance/"
+      "tpa": [
+        "Nextcare",
+        "GlobeMed"
+      ],
+      "features": [
+        "Wide hospital network",
+        "Multiple plan classes",
+        "Family extension",
+        "24/7 support"
+      ],
+      "suitable_for": [
+        "Large corporations",
+        "Medium enterprises",
+        "Government entities"
+      ],
+      "url": "https://mutakamela.sa/health-insurance/",
+      "situations": [
+        "health insurance for employees",
+        "company medical insurance",
+        "staff medical",
+        "CCHI compliant",
+        "employee medical cover",
+        "corporate medical",
+        "hospital network for staff"
+      ],
+      "situations_ar": [
+        "تأمين طبي للموظفين",
+        "تأمين صحي للشركة",
+        "مجلس الضمان الصحي",
+        "تغطية طبية للعاملين"
+      ]
     },
     {
       "id": "CORP-HLT-002",
@@ -171,16 +506,46 @@
       "tagline": "Affordable Health Coverage for Growing Businesses",
       "description": "Health insurance designed specifically for small to medium enterprises. Affordable plans that meet CCHI requirements while providing essential medical coverage for your growing team.",
       "description_ar": "تأمين صحي مصمم خصيصاً للشركات الصغيرة والمتوسطة. خطط بأسعار معقولة تلبي متطلبات مجلس الضمان الصحي مع توفير التغطية الطبية الأساسية لفريقك المتنامي.",
-      "keywords": ["sme", "small business", "medium business", "شركات صغيرة", "أعمال", "medical", "startup", "cchi"],
+      "keywords": [
+        "sme",
+        "small business",
+        "medium business",
+        "شركات صغيرة",
+        "أعمال",
+        "medical",
+        "startup",
+        "cchi"
+      ],
       "coverage": [
         "Basic hospitalization",
         "Outpatient services",
         "Emergency care",
         "CCHI compliant coverage"
       ],
-      "features": ["Affordable premiums", "CCHI compliant", "Simple enrollment", "Quick issuance"],
-      "suitable_for": ["Small businesses (5-50 employees)", "Startups", "Medium enterprises"],
-      "url": "https://mutakamela.sa/health-insurance/"
+      "features": [
+        "Affordable premiums",
+        "CCHI compliant",
+        "Simple enrollment",
+        "Quick issuance"
+      ],
+      "suitable_for": [
+        "Small businesses (5-50 employees)",
+        "Startups",
+        "Medium enterprises"
+      ],
+      "url": "https://mutakamela.sa/health-insurance/",
+      "situations": [
+        "small business medical",
+        "SME health insurance",
+        "medical for 5 employees",
+        "startup health cover",
+        "small company staff insurance"
+      ],
+      "situations_ar": [
+        "تأمين طبي للمنشآت الصغيرة",
+        "تأمين صحي منشأة صغيرة",
+        "موظفين قليلين تأمين طبي"
+      ]
     },
     {
       "id": "CORP-HLT-003",
@@ -191,7 +556,18 @@
       "tagline": "Protection for Your Workforce",
       "description": "Comprehensive coverage for accidental physical injuries within employee groups. Provides financial protection for employees and their families in case of work-related or personal accidents.",
       "description_ar": "تغطية شاملة للإصابات الجسدية العرضية ضمن مجموعات الموظفين. توفر الحماية المالية للموظفين وعائلاتهم في حالة الحوادث المتعلقة بالعمل أو الشخصية.",
-      "keywords": ["accident", "injury", "employees", "group", "حادث", "إصابة", "موظفين", "جماعي", "workplace", "gpa"],
+      "keywords": [
+        "accident",
+        "injury",
+        "employees",
+        "group",
+        "حادث",
+        "إصابة",
+        "موظفين",
+        "جماعي",
+        "workplace",
+        "gpa"
+      ],
       "coverage": [
         "Accidental death benefit",
         "Permanent total disability",
@@ -199,9 +575,31 @@
         "Temporary total disability",
         "Medical expenses from accident"
       ],
-      "features": ["24/7 worldwide coverage", "Simple claims", "Flexible benefit levels"],
-      "suitable_for": ["Manufacturing companies", "Construction firms", "Companies with field workers"],
-      "url": "https://mutakamela.sa/health-insurance/"
+      "features": [
+        "24/7 worldwide coverage",
+        "Simple claims",
+        "Flexible benefit levels"
+      ],
+      "suitable_for": [
+        "Manufacturing companies",
+        "Construction firms",
+        "Companies with field workers"
+      ],
+      "url": "https://mutakamela.sa/health-insurance/",
+      "situations": [
+        "employee injured at work",
+        "accident cover for staff",
+        "group accident",
+        "worker injury compensation",
+        "personal accident for employees",
+        "24 hour accident cover"
+      ],
+      "situations_ar": [
+        "إصابة موظف",
+        "حادث للعاملين",
+        "تأمين حوادث جماعي",
+        "تعويض إصابة عمل"
+      ]
     },
     {
       "id": "CORP-HLT-004",
@@ -212,15 +610,45 @@
       "tagline": "Security for Your Employees' Families",
       "description": "Life insurance coverage for employee groups providing financial security to families in case of death or terminal illness. An essential employee benefit that shows you care.",
       "description_ar": "تغطية تأمين على الحياة لمجموعات الموظفين توفر الأمان المالي للعائلات في حالة الوفاة أو المرض العضال. ميزة أساسية للموظفين تُظهر اهتمامك.",
-      "keywords": ["life", "death", "employees", "group", "حياة", "وفاة", "موظفين", "تأمين جماعي", "benefit", "terminal"],
+      "keywords": [
+        "life",
+        "death",
+        "employees",
+        "group",
+        "حياة",
+        "وفاة",
+        "موظفين",
+        "تأمين جماعي",
+        "benefit",
+        "terminal"
+      ],
       "coverage": [
         "Death benefit",
         "Terminal illness benefit",
         "Accelerated death benefit option"
       ],
-      "features": ["Simple administration", "Flexible coverage levels", "Employee retention tool"],
-      "suitable_for": ["Large corporations", "Companies with employee benefits programs"],
-      "url": "https://mutakamela.sa/health-insurance/"
+      "features": [
+        "Simple administration",
+        "Flexible coverage levels",
+        "Employee retention tool"
+      ],
+      "suitable_for": [
+        "Large corporations",
+        "Companies with employee benefits programs"
+      ],
+      "url": "https://mutakamela.sa/health-insurance/",
+      "situations": [
+        "life cover for employees",
+        "group life",
+        "death benefit for staff",
+        "employee life insurance",
+        "end of service life cover"
+      ],
+      "situations_ar": [
+        "تأمين حياة جماعي",
+        "تأمين حياة للموظفين",
+        "تعويض وفاة موظف"
+      ]
     },
     {
       "id": "CORP-MAR-001",
@@ -231,7 +659,20 @@
       "tagline": "Protect Your Shipments from Port to Delivery",
       "description": "Ensure trade continuity against physical loss or damage. Comprehensive insurance coverage for goods and materials in transport by sea to/from Saudi Arabia, protecting your valuable cargo throughout its journey.",
       "description_ar": "ضمان استمرارية التجارة ضد الخسارة المادية أو الضرر. تغطية تأمينية شاملة للبضائع والمواد المنقولة بحراً من وإلى المملكة العربية السعودية.",
-      "keywords": ["marine", "cargo", "shipping", "import", "export", "بحري", "شحن", "استيراد", "تصدير", "بضائع", "container", "freight"],
+      "keywords": [
+        "marine",
+        "cargo",
+        "shipping",
+        "import",
+        "export",
+        "بحري",
+        "شحن",
+        "استيراد",
+        "تصدير",
+        "بضائع",
+        "container",
+        "freight"
+      ],
       "coverage": [
         "All Risks coverage",
         "Total/Partial loss",
@@ -239,9 +680,39 @@
         "Theft and pilferage",
         "General average contribution"
       ],
-      "features": ["Worldwide coverage", "Flexible terms", "Quick claims settlement"],
-      "suitable_for": ["Importers", "Exporters", "Trading companies", "Freight forwarders"],
-      "url": "https://mutakamela.sa/marine-insurance/"
+      "features": [
+        "Worldwide coverage",
+        "Flexible terms",
+        "Quick claims settlement"
+      ],
+      "suitable_for": [
+        "Importers",
+        "Exporters",
+        "Trading companies",
+        "Freight forwarders"
+      ],
+      "url": "https://mutakamela.sa/marine-insurance/",
+      "situations": [
+        "shipping goods",
+        "sending a container",
+        "import shipment",
+        "export cargo",
+        "goods damaged in transit",
+        "sea freight",
+        "air freight",
+        "cargo lost at sea",
+        "consignment insurance"
+      ],
+      "situations_ar": [
+        "شحن بضائع",
+        "حاوية",
+        "استيراد",
+        "تصدير",
+        "تلف البضاعة أثناء الشحن",
+        "شحن بحري",
+        "شحن جوي",
+        "بوليصة شحن"
+      ]
     },
     {
       "id": "CORP-MAR-002",
@@ -252,7 +723,17 @@
       "tagline": "Complete Protection for Your Vessels",
       "description": "Comprehensive protection for vessels and ships including hull damage, machinery breakdown, and collision liability. Safeguard your maritime assets with industry-leading coverage.",
       "description_ar": "حماية شاملة للسفن والقوارب بما في ذلك أضرار الهيكل وأعطال الآلات ومسؤولية التصادم. احمِ أصولك البحرية بتغطية رائدة في الصناعة.",
-      "keywords": ["hull", "ship", "vessel", "boat", "سفينة", "قارب", "هيكل", "yacht", "maritime"],
+      "keywords": [
+        "hull",
+        "ship",
+        "vessel",
+        "boat",
+        "سفينة",
+        "قارب",
+        "هيكل",
+        "yacht",
+        "maritime"
+      ],
       "coverage": [
         "Hull and machinery damage",
         "Collision liability",
@@ -260,9 +741,33 @@
         "General average",
         "Protection & Indemnity"
       ],
-      "features": ["Global coverage", "Experienced marine underwriters", "24/7 claims support"],
-      "suitable_for": ["Ship owners", "Shipping companies", "Yacht owners", "Maritime operators"],
-      "url": "https://mutakamela.sa/marine-insurance/"
+      "features": [
+        "Global coverage",
+        "Experienced marine underwriters",
+        "24/7 claims support"
+      ],
+      "suitable_for": [
+        "Ship owners",
+        "Shipping companies",
+        "Yacht owners",
+        "Maritime operators"
+      ],
+      "url": "https://mutakamela.sa/marine-insurance/",
+      "situations": [
+        "insure my boat",
+        "yacht insurance",
+        "ship hull damage",
+        "vessel insurance",
+        "fishing boat",
+        "marine vessel collision"
+      ],
+      "situations_ar": [
+        "تأمين قارب",
+        "يخت",
+        "هيكل السفينة",
+        "سفينة",
+        "قارب صيد"
+      ]
     },
     {
       "id": "CORP-MAR-003",
@@ -273,7 +778,18 @@
       "tagline": "Secure Your Domestic Shipments",
       "description": "Coverage for loss or damage to cargo during inland transportation within Saudi Arabia. Protect goods moved by truck, rail, or other land transport from warehouse to final destination.",
       "description_ar": "تغطية للخسارة أو الضرر للبضائع أثناء النقل البري داخل المملكة العربية السعودية. حماية البضائع المنقولة بالشاحنات أو السكك الحديدية من المستودع إلى الوجهة النهائية.",
-      "keywords": ["inland", "transport", "truck", "land", "نقل", "بري", "شاحنة", "domestic", "road", "logistics"],
+      "keywords": [
+        "inland",
+        "transport",
+        "truck",
+        "land",
+        "نقل",
+        "بري",
+        "شاحنة",
+        "domestic",
+        "road",
+        "logistics"
+      ],
       "coverage": [
         "Goods in transit by road",
         "Loading and unloading coverage",
@@ -281,9 +797,32 @@
         "Accident damage",
         "Natural perils"
       ],
-      "features": ["Domestic focus", "Flexible coverage", "Quick issuance"],
-      "suitable_for": ["Logistics companies", "Distributors", "Retailers", "Manufacturers"],
-      "url": "https://mutakamela.sa/marine-insurance/"
+      "features": [
+        "Domestic focus",
+        "Flexible coverage",
+        "Quick issuance"
+      ],
+      "suitable_for": [
+        "Logistics companies",
+        "Distributors",
+        "Retailers",
+        "Manufacturers"
+      ],
+      "url": "https://mutakamela.sa/marine-insurance/",
+      "situations": [
+        "truck transporting goods",
+        "goods moved by road",
+        "inland transit",
+        "delivery fleet cargo",
+        "goods damaged on the truck",
+        "transport within Saudi"
+      ],
+      "situations_ar": [
+        "نقل بضائع بالشاحنات",
+        "نقل بري",
+        "تلف البضاعة في الشاحنة",
+        "نقل داخل المملكة"
+      ]
     },
     {
       "id": "CORP-PRP-001",
@@ -294,7 +833,20 @@
       "tagline": "Protect Your Business Assets",
       "description": "Specialized commercial property protection against risks and business interruption. Features comprehensive risk assessment, property risk surveying, and rapid claim settlement to minimize business disruption.",
       "description_ar": "حماية متخصصة للممتلكات التجارية ضد المخاطر وانقطاع الأعمال. تتميز بتقييم شامل للمخاطر ومسح مخاطر الممتلكات والتسوية السريعة للمطالبات لتقليل تعطل الأعمال.",
-      "keywords": ["property", "building", "fire", "business", "ممتلكات", "مبنى", "حريق", "أعمال", "commercial", "warehouse", "office", "factory"],
+      "keywords": [
+        "property",
+        "building",
+        "fire",
+        "business",
+        "ممتلكات",
+        "مبنى",
+        "حريق",
+        "أعمال",
+        "commercial",
+        "warehouse",
+        "office",
+        "factory"
+      ],
       "coverage": [
         "Fire and allied perils",
         "Business interruption/loss of profits",
@@ -303,9 +855,41 @@
         "Natural catastrophes (flood, earthquake)",
         "Terrorism coverage (optional)"
       ],
-      "features": ["Risk assessment services", "Property surveying", "Rapid claims settlement", "Loss prevention advice"],
-      "suitable_for": ["Business owners", "Commercial properties", "Warehouses", "Factories", "Office buildings"],
-      "url": "https://mutakamela.sa/property-casualty/"
+      "features": [
+        "Risk assessment services",
+        "Property surveying",
+        "Rapid claims settlement",
+        "Loss prevention advice"
+      ],
+      "suitable_for": [
+        "Business owners",
+        "Commercial properties",
+        "Warehouses",
+        "Factories",
+        "Office buildings"
+      ],
+      "url": "https://mutakamela.sa/property-casualty/",
+      "situations": [
+        "my shop flooded",
+        "warehouse fire",
+        "office burglary",
+        "building damage",
+        "factory fire",
+        "stock damaged",
+        "business property",
+        "storm damaged my premises",
+        "burst pipe in the office"
+      ],
+      "situations_ar": [
+        "غرق محلي",
+        "حريق مستودع",
+        "سرقة مكتب",
+        "أضرار المبنى",
+        "حريق مصنع",
+        "تلف البضاعة في المخزن",
+        "ممتلكات الشركة",
+        "عاصفة"
+      ]
     },
     {
       "id": "CORP-LIA-001",
@@ -316,16 +900,52 @@
       "tagline": "Shield Your Business from Third-Party Claims",
       "description": "Protection against claims from clients or the public for accidental injury or property damage resulting from your business activities. Covers legal defense costs and compensation.",
       "description_ar": "الحماية من المطالبات من العملاء أو الجمهور بسبب الإصابة العرضية أو تلف الممتلكات الناتج عن أنشطة عملك. تغطي تكاليف الدفاع القانوني والتعويض.",
-      "keywords": ["liability", "public", "third party", "injury", "مسؤولية", "عامة", "طرف ثالث", "إصابة", "legal", "claim"],
+      "keywords": [
+        "liability",
+        "public",
+        "third party",
+        "injury",
+        "مسؤولية",
+        "عامة",
+        "طرف ثالث",
+        "إصابة",
+        "legal",
+        "claim"
+      ],
       "coverage": [
         "Third party bodily injury",
         "Third party property damage",
         "Legal defense costs",
         "Court awards and settlements"
       ],
-      "features": ["Worldwide coverage option", "Legal support", "Flexible limits"],
-      "suitable_for": ["Retail businesses", "Service providers", "Event organizers", "Restaurants"],
-      "url": "https://mutakamela.sa/liability-insurance/"
+      "features": [
+        "Worldwide coverage option",
+        "Legal support",
+        "Flexible limits"
+      ],
+      "suitable_for": [
+        "Retail businesses",
+        "Service providers",
+        "Event organizers",
+        "Restaurants"
+      ],
+      "url": "https://mutakamela.sa/liability-insurance/",
+      "situations": [
+        "customer slipped in my store",
+        "visitor injured on premises",
+        "third party injury claim",
+        "someone sued my business",
+        "liability to the public",
+        "event liability",
+        "restaurant liability"
+      ],
+      "situations_ar": [
+        "زبون انزلق في محلي",
+        "إصابة زائر",
+        "دعوى ضد شركتي",
+        "مسؤولية تجاه الغير",
+        "مسؤولية فعالية"
+      ]
     },
     {
       "id": "CORP-LIA-002",
@@ -336,7 +956,17 @@
       "tagline": "Protect Your Leadership",
       "description": "Shields company directors and officers from personal liability claims stemming from management decisions and actions. Essential protection for corporate leadership in today's litigious environment.",
       "description_ar": "يحمي مدراء الشركة ومسؤوليها من مطالبات المسؤولية الشخصية الناتجة عن قرارات وإجراءات الإدارة. حماية أساسية للقيادة المؤسسية.",
-      "keywords": ["directors", "officers", "D&O", "management", "مدراء", "إدارة", "board", "executive", "shareholder"],
+      "keywords": [
+        "directors",
+        "officers",
+        "D&O",
+        "management",
+        "مدراء",
+        "إدارة",
+        "board",
+        "executive",
+        "shareholder"
+      ],
       "coverage": [
         "Wrongful management acts",
         "Shareholder claims",
@@ -344,9 +974,31 @@
         "Employment practices liability",
         "Defense costs"
       ],
-      "features": ["Personal asset protection", "Regulatory coverage", "Employment practices"],
-      "suitable_for": ["Listed companies", "Board members", "C-suite executives", "Private companies"],
-      "url": "https://mutakamela.sa/liability-insurance/"
+      "features": [
+        "Personal asset protection",
+        "Regulatory coverage",
+        "Employment practices"
+      ],
+      "suitable_for": [
+        "Listed companies",
+        "Board members",
+        "C-suite executives",
+        "Private companies"
+      ],
+      "url": "https://mutakamela.sa/liability-insurance/",
+      "situations": [
+        "board members liability",
+        "directors sued",
+        "management decisions lawsuit",
+        "officers protection",
+        "shareholder claim against directors",
+        "D&O"
+      ],
+      "situations_ar": [
+        "مسؤولية أعضاء مجلس الإدارة",
+        "دعوى ضد المدراء",
+        "حماية المسؤولين التنفيذيين"
+      ]
     },
     {
       "id": "CORP-LIA-003",
@@ -357,7 +1009,17 @@
       "tagline": "Protect Against Product-Related Claims",
       "description": "Designed for manufacturers, distributors, and retailers facing third-party injury or property damage claims arising from product use. Covers recall costs and legal defense.",
       "description_ar": "مصمم للمصنعين والموزعين وتجار التجزئة الذين يواجهون مطالبات إصابة الغير أو تلف الممتلكات الناشئة عن استخدام المنتج. يغطي تكاليف الاستدعاء والدفاع القانوني.",
-      "keywords": ["product", "manufacturer", "defect", "recall", "منتج", "مصنع", "عيب", "استدعاء", "consumer"],
+      "keywords": [
+        "product",
+        "manufacturer",
+        "defect",
+        "recall",
+        "منتج",
+        "مصنع",
+        "عيب",
+        "استدعاء",
+        "consumer"
+      ],
       "coverage": [
         "Product defect claims",
         "Bodily injury from products",
@@ -365,9 +1027,32 @@
         "Product recall expenses",
         "Legal defense costs"
       ],
-      "features": ["Recall coverage", "Global protection", "Legal support"],
-      "suitable_for": ["Manufacturers", "Importers", "Distributors", "Retailers", "Food producers"],
-      "url": "https://mutakamela.sa/liability-insurance/"
+      "features": [
+        "Recall coverage",
+        "Global protection",
+        "Legal support"
+      ],
+      "suitable_for": [
+        "Manufacturers",
+        "Importers",
+        "Distributors",
+        "Retailers",
+        "Food producers"
+      ],
+      "url": "https://mutakamela.sa/liability-insurance/",
+      "situations": [
+        "defective product injured someone",
+        "product recall",
+        "faulty goods claim",
+        "manufacturer liability",
+        "product caused damage"
+      ],
+      "situations_ar": [
+        "منتج معيب",
+        "سحب منتج",
+        "ضرر بسبب منتج",
+        "مسؤولية المصنع"
+      ]
     },
     {
       "id": "CORP-LIA-004",
@@ -378,7 +1063,18 @@
       "tagline": "Coverage for Professional Errors",
       "description": "Protects professionals against claims related to errors, omissions, or negligence in professional services. Available for engineers, tech professionals, construction specialists, and more.",
       "description_ar": "يحمي المهنيين من المطالبات المتعلقة بالأخطاء أو الإهمال في الخدمات المهنية. متاح للمهندسين ومتخصصي التكنولوجيا وخبراء البناء وغيرهم.",
-      "keywords": ["professional", "indemnity", "errors", "omissions", "مهني", "تعويض", "أخطاء", "engineer", "consultant", "architect"],
+      "keywords": [
+        "professional",
+        "indemnity",
+        "errors",
+        "omissions",
+        "مهني",
+        "تعويض",
+        "أخطاء",
+        "engineer",
+        "consultant",
+        "architect"
+      ],
       "coverage": [
         "Professional negligence",
         "Errors and omissions",
@@ -386,10 +1082,40 @@
         "Legal defense costs",
         "Civil liability"
       ],
-      "sub_types": ["Engineers PI", "Tech/Telecom PI", "Construction PI", "Miscellaneous PI"],
-      "features": ["Sector-specific coverage", "Retroactive coverage", "Run-off coverage option"],
-      "suitable_for": ["Engineers", "Architects", "IT consultants", "Legal professionals", "Medical professionals"],
-      "url": "https://mutakamela.sa/liability-insurance/"
+      "sub_types": [
+        "Engineers PI",
+        "Tech/Telecom PI",
+        "Construction PI",
+        "Miscellaneous PI"
+      ],
+      "features": [
+        "Sector-specific coverage",
+        "Retroactive coverage",
+        "Run-off coverage option"
+      ],
+      "suitable_for": [
+        "Engineers",
+        "Architects",
+        "IT consultants",
+        "Legal professionals",
+        "Medical professionals"
+      ],
+      "url": "https://mutakamela.sa/liability-insurance/",
+      "situations": [
+        "professional negligence",
+        "client sued for bad advice",
+        "consultant errors",
+        "engineer mistake claim",
+        "lawyer malpractice",
+        "accountant error",
+        "E&O"
+      ],
+      "situations_ar": [
+        "إهمال مهني",
+        "خطأ استشاري",
+        "دعوى بسبب خطأ مهني",
+        "أخطاء وسهو"
+      ]
     },
     {
       "id": "CORP-LIA-005",
@@ -400,7 +1126,16 @@
       "tagline": "Protection for Medical Research",
       "description": "Covers sponsors of clinical drug and medical device testing for participant injury compensation. Essential for pharmaceutical companies and medical research institutions conducting trials in Saudi Arabia.",
       "description_ar": "يغطي رعاة اختبار الأدوية والأجهزة الطبية السريرية لتعويض إصابات المشاركين. ضروري لشركات الأدوية ومؤسسات البحث الطبي التي تجري تجارب في المملكة.",
-      "keywords": ["clinical", "trials", "pharmaceutical", "medical device", "تجارب", "سريرية", "أدوية", "research"],
+      "keywords": [
+        "clinical",
+        "trials",
+        "pharmaceutical",
+        "medical device",
+        "تجارب",
+        "سريرية",
+        "أدوية",
+        "research"
+      ],
       "coverage": [
         "Participant injury compensation",
         "Adverse drug reactions",
@@ -408,9 +1143,31 @@
         "Research-related injuries",
         "Legal defense"
       ],
-      "features": ["Specialized coverage", "Regulatory compliance", "Global trial coverage"],
-      "suitable_for": ["Pharmaceutical companies", "Medical device companies", "Research institutions", "Hospitals"],
-      "url": "https://mutakamela.sa/liability-insurance/"
+      "features": [
+        "Specialized coverage",
+        "Regulatory compliance",
+        "Global trial coverage"
+      ],
+      "suitable_for": [
+        "Pharmaceutical companies",
+        "Medical device companies",
+        "Research institutions",
+        "Hospitals"
+      ],
+      "url": "https://mutakamela.sa/liability-insurance/",
+      "situations": [
+        "clinical trial",
+        "drug study participants",
+        "research volunteers injury",
+        "pharma trial cover",
+        "medical research liability"
+      ],
+      "situations_ar": [
+        "تجارب سريرية",
+        "دراسة دوائية",
+        "متطوعين في بحث طبي",
+        "مسؤولية أبحاث طبية"
+      ]
     },
     {
       "id": "CORP-ENG-001",
@@ -421,7 +1178,17 @@
       "tagline": "Complete Construction Protection",
       "description": "Comprehensive coverage for physical loss or damage to property and contract works during construction, including contractor's plant, equipment, and third-party liability.",
       "description_ar": "تغطية شاملة للخسارة المادية أو الضرر للممتلكات وأعمال العقد أثناء البناء، بما في ذلك معدات المقاول والمسؤولية تجاه الغير.",
-      "keywords": ["construction", "contractor", "building", "project", "بناء", "مقاول", "مشروع", "CAR", "civil works"],
+      "keywords": [
+        "construction",
+        "contractor",
+        "building",
+        "project",
+        "بناء",
+        "مقاول",
+        "مشروع",
+        "CAR",
+        "civil works"
+      ],
       "coverage": [
         "Contract works damage",
         "Construction materials",
@@ -429,9 +1196,33 @@
         "Third party liability",
         "Debris removal"
       ],
-      "features": ["Project-specific policies", "Flexible terms", "Risk management support"],
-      "suitable_for": ["General contractors", "Construction companies", "Property developers", "Civil engineers"],
-      "url": "https://mutakamela.sa/engineering-insurance/"
+      "features": [
+        "Project-specific policies",
+        "Flexible terms",
+        "Risk management support"
+      ],
+      "suitable_for": [
+        "General contractors",
+        "Construction companies",
+        "Property developers",
+        "Civil engineers"
+      ],
+      "url": "https://mutakamela.sa/engineering-insurance/",
+      "situations": [
+        "construction site",
+        "building a villa",
+        "contractor project insurance",
+        "construction all risks",
+        "site accident damage",
+        "building under construction collapsed"
+      ],
+      "situations_ar": [
+        "موقع بناء",
+        "بناء فيلا",
+        "تأمين مشروع مقاول",
+        "جميع أخطار المقاولين",
+        "انهيار مبنى تحت الإنشاء"
+      ]
     },
     {
       "id": "CORP-ENG-002",
@@ -442,16 +1233,48 @@
       "tagline": "Protection During Installation",
       "description": "Protects machinery and plant during installation phases with liability coverage for third parties during the erection period. Ideal for power plants, industrial facilities, and major equipment installations.",
       "description_ar": "يحمي الآلات والمعدات أثناء مراحل التركيب مع تغطية المسؤولية تجاه الغير خلال فترة التركيب. مثالي لمحطات الطاقة والمرافق الصناعية.",
-      "keywords": ["erection", "installation", "machinery", "plant", "تركيب", "آلات", "معدات", "EAR", "commissioning"],
+      "keywords": [
+        "erection",
+        "installation",
+        "machinery",
+        "plant",
+        "تركيب",
+        "آلات",
+        "معدات",
+        "EAR",
+        "commissioning"
+      ],
       "coverage": [
         "Machinery during erection",
         "Testing and commissioning",
         "Third party liability",
         "Maintenance period coverage"
       ],
-      "features": ["Testing coverage", "Commissioning protection", "Defects liability period"],
-      "suitable_for": ["Equipment installers", "Plant builders", "Power plant contractors", "Industrial projects"],
-      "url": "https://mutakamela.sa/engineering-insurance/"
+      "features": [
+        "Testing coverage",
+        "Commissioning protection",
+        "Defects liability period"
+      ],
+      "suitable_for": [
+        "Equipment installers",
+        "Plant builders",
+        "Power plant contractors",
+        "Industrial projects"
+      ],
+      "url": "https://mutakamela.sa/engineering-insurance/",
+      "situations": [
+        "installing machinery",
+        "erecting a plant",
+        "equipment installation project",
+        "erection of steel structure",
+        "commissioning risk"
+      ],
+      "situations_ar": [
+        "تركيب آلات",
+        "إنشاء مصنع",
+        "مشروع تركيب معدات",
+        "تركيب هيكل حديدي"
+      ]
     },
     {
       "id": "CORP-ENG-003",
@@ -462,7 +1285,17 @@
       "tagline": "Keep Your Operations Running",
       "description": "Covers electrical or mechanical equipment failures during operation, at rest, or during maintenance. Protects against sudden and unforeseen breakdown of critical machinery.",
       "description_ar": "يغطي أعطال المعدات الكهربائية أو الميكانيكية أثناء التشغيل أو الراحة أو الصيانة. يحمي من الأعطال المفاجئة وغير المتوقعة للآلات الحيوية.",
-      "keywords": ["machinery", "breakdown", "equipment", "failure", "آلات", "عطل", "معدات", "mechanical", "electrical"],
+      "keywords": [
+        "machinery",
+        "breakdown",
+        "equipment",
+        "failure",
+        "آلات",
+        "عطل",
+        "معدات",
+        "mechanical",
+        "electrical"
+      ],
       "coverage": [
         "Mechanical breakdown",
         "Electrical failure",
@@ -470,9 +1303,35 @@
         "Replacement/repair costs",
         "Business interruption (optional)"
       ],
-      "features": ["24/7 coverage", "Business interruption option", "Wide equipment scope"],
-      "suitable_for": ["Factories", "Hospitals", "Data centers", "Hotels", "Manufacturing plants"],
-      "url": "https://mutakamela.sa/engineering-insurance/"
+      "features": [
+        "24/7 coverage",
+        "Business interruption option",
+        "Wide equipment scope"
+      ],
+      "suitable_for": [
+        "Factories",
+        "Hospitals",
+        "Data centers",
+        "Hotels",
+        "Manufacturing plants"
+      ],
+      "url": "https://mutakamela.sa/engineering-insurance/",
+      "situations": [
+        "machine stopped working",
+        "generator failure",
+        "compressor broke",
+        "production line breakdown",
+        "mechanical failure",
+        "electrical fault in machinery"
+      ],
+      "situations_ar": [
+        "توقفت الآلة",
+        "عطل مولد",
+        "عطل ضاغط",
+        "توقف خط الإنتاج",
+        "عطل ميكانيكي",
+        "عطل كهربائي"
+      ]
     },
     {
       "id": "CORP-ENG-004",
@@ -483,7 +1342,17 @@
       "tagline": "Protect Your Digital Assets",
       "description": "Covers sudden, unforeseen damage to computer hardware, communication systems, and medical equipment, including data media damage and restoration costs.",
       "description_ar": "يغطي الأضرار المفاجئة وغير المتوقعة لأجهزة الكمبيوتر وأنظمة الاتصالات والمعدات الطبية، بما في ذلك أضرار وسائط البيانات وتكاليف الاستعادة.",
-      "keywords": ["electronic", "computer", "server", "IT", "إلكتروني", "حاسب", "سيرفر", "data", "communication"],
+      "keywords": [
+        "electronic",
+        "computer",
+        "server",
+        "IT",
+        "إلكتروني",
+        "حاسب",
+        "سيرفر",
+        "data",
+        "communication"
+      ],
       "coverage": [
         "Hardware damage",
         "Data media damage",
@@ -491,9 +1360,36 @@
         "External data media",
         "Increased cost of working"
       ],
-      "features": ["Data restoration", "All risks coverage", "Portable equipment coverage"],
-      "suitable_for": ["IT companies", "Banks", "Hospitals", "Data centers", "Telecom companies"],
-      "url": "https://mutakamela.sa/engineering-insurance/"
+      "features": [
+        "Data restoration",
+        "All risks coverage",
+        "Portable equipment coverage"
+      ],
+      "suitable_for": [
+        "IT companies",
+        "Banks",
+        "Hospitals",
+        "Data centers",
+        "Telecom companies"
+      ],
+      "url": "https://mutakamela.sa/engineering-insurance/",
+      "situations": [
+        "server damaged",
+        "computers",
+        "data center equipment",
+        "medical imaging machine failure",
+        "electronic devices insurance",
+        "laptops for office",
+        "power surge damaged equipment"
+      ],
+      "situations_ar": [
+        "تلف السيرفر",
+        "أجهزة كمبيوتر",
+        "مركز بيانات",
+        "جهاز أشعة",
+        "أجهزة إلكترونية",
+        "ارتفاع الجهد أتلف الأجهزة"
+      ]
     },
     {
       "id": "CORP-ENG-005",
@@ -504,7 +1400,17 @@
       "tagline": "Protect Your Construction Equipment",
       "description": "Covers construction equipment against accidental loss or damage at job sites. Protection for cranes, excavators, and all types of contractor machinery.",
       "description_ar": "يغطي معدات البناء ضد الخسارة أو الضرر العرضي في مواقع العمل. حماية للرافعات والحفارات وجميع أنواع آلات المقاولين.",
-      "keywords": ["plant", "machinery", "crane", "excavator", "رافعة", "حفار", "معدات ثقيلة", "equipment", "construction equipment"],
+      "keywords": [
+        "plant",
+        "machinery",
+        "crane",
+        "excavator",
+        "رافعة",
+        "حفار",
+        "معدات ثقيلة",
+        "equipment",
+        "construction equipment"
+      ],
       "coverage": [
         "Accidental damage",
         "Theft",
@@ -512,9 +1418,33 @@
         "Natural perils",
         "Transit coverage"
       ],
-      "features": ["All risks coverage", "Transit included", "Hired equipment option"],
-      "suitable_for": ["Construction companies", "Equipment rental firms", "Civil contractors", "Mining companies"],
-      "url": "https://mutakamela.sa/engineering-insurance/"
+      "features": [
+        "All risks coverage",
+        "Transit included",
+        "Hired equipment option"
+      ],
+      "suitable_for": [
+        "Construction companies",
+        "Equipment rental firms",
+        "Civil contractors",
+        "Mining companies"
+      ],
+      "url": "https://mutakamela.sa/engineering-insurance/",
+      "situations": [
+        "excavator",
+        "crane insurance",
+        "bulldozer damaged",
+        "construction equipment theft",
+        "plant and machinery on site",
+        "mobile equipment"
+      ],
+      "situations_ar": [
+        "حفارة",
+        "رافعة",
+        "بلدوزر",
+        "سرقة معدات بناء",
+        "معدات المقاولين"
+      ]
     },
     {
       "id": "CORP-ENG-006",
@@ -525,16 +1455,48 @@
       "tagline": "Safety for High-Pressure Equipment",
       "description": "Protects against explosion or collapse damage to boilers, pressure vessels, and related property. Essential for industries operating high-pressure equipment.",
       "description_ar": "يحمي من أضرار الانفجار أو الانهيار للغلايات وأوعية الضغط والممتلكات ذات الصلة. ضروري للصناعات التي تشغل معدات الضغط العالي.",
-      "keywords": ["boiler", "pressure", "vessel", "explosion", "غلاية", "ضغط", "وعاء", "انفجار", "steam"],
+      "keywords": [
+        "boiler",
+        "pressure",
+        "vessel",
+        "explosion",
+        "غلاية",
+        "ضغط",
+        "وعاء",
+        "انفجار",
+        "steam"
+      ],
       "coverage": [
         "Explosion damage",
         "Collapse damage",
         "Surrounding property damage",
         "Third party liability"
       ],
-      "features": ["Inspection services", "Risk assessment", "Regulatory compliance"],
-      "suitable_for": ["Power plants", "Refineries", "Chemical plants", "Industrial facilities"],
-      "url": "https://mutakamela.sa/engineering-insurance/"
+      "features": [
+        "Inspection services",
+        "Risk assessment",
+        "Regulatory compliance"
+      ],
+      "suitable_for": [
+        "Power plants",
+        "Refineries",
+        "Chemical plants",
+        "Industrial facilities"
+      ],
+      "url": "https://mutakamela.sa/engineering-insurance/",
+      "situations": [
+        "boiler explosion",
+        "pressure vessel",
+        "steam boiler",
+        "industrial boiler failure",
+        "pressure tank rupture"
+      ],
+      "situations_ar": [
+        "انفجار غلاية",
+        "وعاء ضغط",
+        "غلاية بخار",
+        "خزان ضغط"
+      ]
     },
     {
       "id": "CORP-CRD-001",
@@ -545,16 +1507,53 @@
       "tagline": "Protect Your Receivables",
       "description": "A partnership providing world-class knowledge and data to empower your trading decisions, backed by a reimbursement guarantee against customer non-payment. Secure your accounts receivable.",
       "description_ar": "شراكة توفر معرفة وبيانات عالمية لتمكين قرارات التداول الخاصة بك، مدعومة بضمان التعويض ضد عدم سداد العملاء. احمِ حساباتك المدينة.",
-      "keywords": ["credit", "trade", "payment", "customer", "ائتمان", "تجارة", "سداد", "عميل", "receivables", "non-payment", "debt"],
+      "keywords": [
+        "credit",
+        "trade",
+        "payment",
+        "customer",
+        "ائتمان",
+        "تجارة",
+        "سداد",
+        "عميل",
+        "receivables",
+        "non-payment",
+        "debt"
+      ],
       "coverage": [
         "Customer insolvency",
         "Protracted default",
         "Political risk (export)",
         "Credit assessment services"
       ],
-      "features": ["Credit intelligence", "Buyer monitoring", "Collection services", "Global coverage"],
-      "suitable_for": ["Exporters", "Wholesalers", "B2B businesses", "Manufacturers with credit sales"],
-      "url": "https://mutakamela.sa/corporate-products/"
+      "features": [
+        "Credit intelligence",
+        "Buyer monitoring",
+        "Collection services",
+        "Global coverage"
+      ],
+      "suitable_for": [
+        "Exporters",
+        "Wholesalers",
+        "B2B businesses",
+        "Manufacturers with credit sales"
+      ],
+      "url": "https://mutakamela.sa/corporate-products/",
+      "situations": [
+        "customer didn't pay invoice",
+        "bad debt",
+        "buyer insolvency",
+        "unpaid receivables",
+        "credit risk on customers",
+        "export payment default"
+      ],
+      "situations_ar": [
+        "العميل ما سدد الفاتورة",
+        "ديون معدومة",
+        "إفلاس المشتري",
+        "ذمم غير محصلة",
+        "مخاطر ائتمان"
+      ]
     },
     {
       "id": "CORP-PEC-001",
@@ -565,16 +1564,53 @@
       "tagline": "Protect Your Financial Assets",
       "description": "Helps customers make the best choices for their businesses by providing protection for money, fidelity risks, and financial losses from employee dishonesty or crime.",
       "description_ar": "يساعد العملاء على اتخاذ أفضل القرارات لأعمالهم من خلال توفير الحماية للأموال ومخاطر الأمانة والخسائر المالية من خيانة الموظفين أو الجريمة.",
-      "keywords": ["pecuniary", "financial", "fidelity", "money", "مالي", "أمانة", "نقود", "cash", "fraud", "employee dishonesty"],
+      "keywords": [
+        "pecuniary",
+        "financial",
+        "fidelity",
+        "money",
+        "مالي",
+        "أمانة",
+        "نقود",
+        "cash",
+        "fraud",
+        "employee dishonesty"
+      ],
       "coverage": [
         "Fidelity guarantee (employee dishonesty)",
         "Money insurance (cash in safe/transit)",
         "Computer crime",
         "Forgery coverage"
       ],
-      "features": ["Comprehensive crime coverage", "Cash handling protection", "Employee screening support"],
-      "suitable_for": ["Banks", "Retailers", "Cash-handling businesses", "Financial institutions"],
-      "url": "https://mutakamela.sa/corporate-products/"
+      "features": [
+        "Comprehensive crime coverage",
+        "Cash handling protection",
+        "Employee screening support"
+      ],
+      "suitable_for": [
+        "Banks",
+        "Retailers",
+        "Cash-handling businesses",
+        "Financial institutions"
+      ],
+      "url": "https://mutakamela.sa/corporate-products/",
+      "situations": [
+        "employee stole money",
+        "embezzlement",
+        "fidelity guarantee",
+        "cash in transit",
+        "theft of money from safe",
+        "fraud by staff",
+        "bank guarantee bond"
+      ],
+      "situations_ar": [
+        "موظف سرق أموال",
+        "اختلاس",
+        "ضمان الأمانة",
+        "نقل النقد",
+        "سرقة من الخزنة",
+        "احتيال موظف"
+      ]
     }
   ],
   "lob_mapping": {

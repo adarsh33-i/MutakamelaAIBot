@@ -14,8 +14,12 @@ public static class PortalIntent
         var m = message.Trim().ToLowerInvariant();
         bool Has(params string[] words) => words.Any(m.Contains);
 
-        if (Has("track") && Has("claim", "مطالب") || Has("claim status", "حالة المطالبة", "حالة مطالبتي", "تتبع المطالبة", "تتبع مطالبة", "تتبع مطالبتي"))
+        if (Has("track") && Has("claim", "claims", "مطالب") ||
+            Has("claim status", "claim tracking", "track my claim", "تتبع المطالبة", "تتبع مطالبة", "تتبع مطالبتي", "حالة المطالبة", "حالة مطالبتي"))
             return FlowIds.TrackAClaim;
+
+        if (Has("complaint", "complaints", "complain", "شكوى", "شكاوى"))
+            return FlowIds.SubmitComplaint;
 
         if (Has("claim", "مطالبة") && Has("file", "make", "submit", "open", "report", "new", "start", "تقديم", "رفع", "فتح", "أريد", "اريد", "ابغى", "أبغى") ||
             m == "claims" || m == "i want to file a claim")

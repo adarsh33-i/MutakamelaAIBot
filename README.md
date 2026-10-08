@@ -57,7 +57,10 @@ The separate Python selector and legacy Flask `/api/chat` endpoint remain availa
 - Explore product details in chat; quote, payment, and policy requests are handed off to Mutakamela's official site.
 - Use the standalone selector with OpenAI or its local rule-based fallback.
 - Use the existing Flask-served web widget with the .NET chat API and local Qwen model.
-- Run guided portal journeys from chat (buy motor insurance, update personal info, make a claim, track a claim): the agentic engine collects and validates the details, pauses for the customer's own portal login, shows a review card, and only submits after an explicit confirmation. Ships in simulation mode; see `backend/MutakamelaAPI/README.md` for how the real browser agent is enabled.
+- Start claim submission or claim tracking directly from chat. Filing opens Mutakamela's motor-claim identity gate; identity details, National Information Center authorization, the later claim form, and final submission stay on the official portal and under the customer's control. Tracking asks for the claim number, opens the public Claim Center page, and prefills that number when the browser extension is active. The customer enters their ID/Iqama/CR and clicks **Track Status** themselves; chat does not submit the lookup or claim to the portal, and does not claim to have retrieved the resulting status.
+- When the complaint flow asks which product the complaint is about, customers can select it directly inside that chat message using the official product list. At the final complaint step, the chat shows one **Choose file** action; selecting supported documents opens the official complaint form and attaches them automatically through the Chrome/Edge extension. Files remain local to the browser and bypass the chat/API/model. Supported formats are PDF, JPG, JPEG, DOC, and DOCX, up to 2 MB each. The extension removes its temporary local copies after attachment, cancellation, tab close, or expiry. Review all details and attachments and click Submit yourself; the assistant never submits the complaint.
+- Use the optional Chrome/Edge extension in `browser-extension/` to open the matching Mutakamela portal tab automatically after a journey is ready. It prefills the verified claim-number field on the public tracker; the identity number, tracking lookup, consent, portal login, review, and claim submission remain customer-controlled.
+- For open-ended insurance questions, the local Qwen model receives the full local product catalog plus relevant text retrieved from published Mutakamela pages discovered through the official sitemap. This grounds its natural-language interpretation; it does not fine-tune Qwen or provide full policy wording. Pricing, eligibility and exclusions are only stated when supported by the supplied source material.
 
 Chat requests are limited to 20 per minute per client address by default. Set `CHAT_RATE_LIMIT` to change the limit. The default in-memory rate-limit store is for a single process; multi-worker deployments should set `RATELIMIT_STORAGE_URI` to a shared store such as Redis. Same-origin requests do not need CORS; set `CORS_ORIGINS` to a comma-separated allowlist only when using a separate frontend origin.
 
@@ -121,6 +124,18 @@ Copy `.env.example` to `.env` for the Flask widget settings. The local Qwen-back
 | `HOST`, `PORT`, `FLASK_DEBUG` | Server binding, port, and development debug mode. |
 
 Ollama must be reachable from the .NET API. Keep it on a private network in production; do not expose its local inference port publicly. The built-in Flask server is for local development; deploy the widget behind a production WSGI server.
+
+## Automatic portal opening and autofill
+
+For local Chrome or Edge development, install the unpacked extension:
+
+1. Open `chrome://extensions` (Chrome) or `edge://extensions` (Edge) and enable Developer mode.
+2. Choose **Load unpacked** and select the repository's `browser-extension` folder.
+3. Reload the unpacked extension after code updates, then reload the chat page at `http://localhost:5001`.
+
+At the final complaint step, choosing a file in the chat opens the official form and transfers the selected documents automatically. This requires the extension to be installed and reloaded in Chrome or Edge. After the customer submits the official complaint form, the extension detects the portal's success confirmation and relays the confirmation and complaint number (when shown) to the original chat tab. Other portal handoffs open their matching official URL in a new tab. The extension fills only matching fields from a verified flow and displays a reminder to review them. It never fills OTP, password, or payment fields and never clicks a continue or submit button.
+
+The complaint form flow is marked `verified: true` after checking its selectors against the live form. Other flow specifications remain `verified: false`; for those, the extension opens the portal but deliberately sends no customer values and performs no autofill. Verify the selectors in `backend/MutakamelaAPI/Browser/Flows/*.json` before setting another flow to `verified: true`. The extension's chat-origin allowlist currently targets the local widget at port 5001; update the manifest and `CHAT_ORIGINS` in `browser-extension/service-worker.js` before using a different trusted chat origin.
 
 ## API
 

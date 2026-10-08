@@ -1,0 +1,125 @@
+{
+  "id": "submit-complaint",
+  "title": "Submit a complaint",
+  "title_ar": "تقديم شكوى",
+  "url": "https://mutakamela.sa/submit-your-complaints/",
+  "kind": "external-form-handoff",
+  "requires_login": false,
+  "requires_approval": false,
+  "external_handoff": true,
+  "verified": true,
+  "_note": "Selectors verified against the official public complaint form on 2026-10-05. The assistant only fills fields; the customer submits the form.",
+  "screens": [
+    {
+      "id": "complaint",
+      "title": "Complaint details",
+      "title_ar": "تفاصيل الشكوى",
+      "ready_selector": "#form-field-field_9198e92",
+      "fields": [
+        {
+          "id": "full_name",
+          "label": "Full name",
+          "label_ar": "الاسم الكامل",
+          "type": "text",
+          "rule": "person_name",
+          "selectors": ["#form-field-field_9198e92"],
+          "prompt": "What full name should appear on the complaint?",
+          "prompt_ar": "ما الاسم الكامل الذي تريد إدراجه في الشكوى؟",
+          "source": "customer"
+        },
+        {
+          "id": "complaint_identifier",
+          "label": "ID, Iqama or CR number",
+          "label_ar": "رقم الهوية أو الإقامة أو السجل التجاري",
+          "type": "text",
+          "rule": "digits_10",
+          "selectors": ["#form-field-field_1ab3720"],
+          "prompt": "What 10-digit ID, Iqama or CR number should appear on the complaint?",
+          "prompt_ar": "ما رقم الهوية أو الإقامة أو السجل التجاري المكون من 10 أرقام؟",
+          "source": "customer"
+        },
+        {
+          "id": "phone",
+          "label": "Phone number",
+          "label_ar": "رقم الهاتف",
+          "type": "text",
+          "rule": "saudi_mobile",
+          "selectors": ["#form-field-field_ce90f3e"],
+          "prompt": "What Saudi mobile number should Mutakamela use to contact you?",
+          "prompt_ar": "ما رقم الجوال السعودي الذي يمكن لمتكاملة التواصل معك من خلاله؟",
+          "source": "customer"
+        },
+        {
+          "id": "city",
+          "label": "City",
+          "label_ar": "المدينة",
+          "type": "select",
+          "rule": "complaint_city",
+          "selectors": ["#form-field-field_935b8ba"],
+          "prompt": "Which city are you in? (Riyadh, Makkah, Jeddah, Madinah, Qassim, Eastern Province, Aseer, Tabouk, Hail, Al Jowf, Abha, Northern Province or Other)",
+          "prompt_ar": "ما مدينتك؟ (Riyadh أو Makkah أو Jeddah أو Madinah أو Qassim أو Eastern Province أو Aseer أو Tabouk أو Hail أو Al Jowf أو Abha أو Northern Province أو Other)",
+          "source": "customer"
+        },
+        {
+          "id": "email",
+          "label": "Email",
+          "label_ar": "البريد الإلكتروني",
+          "type": "text",
+          "rule": "email",
+          "selectors": ["#form-field-field_e534ad8"],
+          "prompt": "What email address should Mutakamela use to contact you?",
+          "prompt_ar": "ما عنوان البريد الإلكتروني الذي يمكن لمتكاملة التواصل معك من خلاله؟",
+          "source": "customer"
+        },
+        {
+          "id": "product",
+          "label": "Product",
+          "label_ar": "المنتج",
+          "type": "select",
+          "rule": "free_text",
+          "selectors": ["#form-field-field_e732973"],
+          "prompt": "Which insurance product is your complaint about? Enter its product name or code as shown by Mutakamela (for example, Motor Individual Plan or MIP).",
+          "prompt_ar": "ما منتج التأمين الذي تتعلق به الشكوى؟ أدخل اسم المنتج أو رمزه كما يظهر لدى متكاملة (مثال: Motor Individual Plan أو MIP).",
+          "source": "customer"
+        },
+        {
+          "id": "policy_number",
+          "label": "Policy number (optional)",
+          "label_ar": "رقم الوثيقة (اختياري)",
+          "type": "text",
+          "required": false,
+          "rule": "digits_only",
+          "selectors": ["#form-field-field_ec5c3bd"],
+          "prompt": "If relevant, what is the policy number? Reply skip if you don't have one.",
+          "prompt_ar": "إذا كان ذلك متعلقاً، ما رقم الوثيقة؟ أرسل تخطي إذا لم يكن لديك رقم.",
+          "source": "customer"
+        },
+        {
+          "id": "claim_number",
+          "label": "Claim number (optional)",
+          "label_ar": "رقم المطالبة (اختياري)",
+          "type": "text",
+          "required": false,
+          "rule": "free_text",
+          "selectors": ["#form-field-field_ab76746"],
+          "prompt": "If relevant, what is the claim number? Reply skip if you don't have one.",
+          "prompt_ar": "إذا كان ذلك متعلقاً، ما رقم المطالبة؟ أرسل تخطي إذا لم يكن لديك رقم.",
+          "source": "customer"
+        },
+        {
+          "id": "description",
+          "label": "Complaint description",
+          "label_ar": "وصف الشكوى",
+          "type": "text",
+          "rule": "free_text",
+          "selectors": ["#form-field-field_db65f6c"],
+          "prompt": "Please describe your complaint and the outcome you are seeking.",
+          "prompt_ar": "يرجى وصف الشكوى والنتيجة التي تطلبها.",
+          "source": "customer"
+        }
+      ],
+      "error_selector": ".elementor-message-danger, [role=alert]"
+    }
+  ],
+  "outputs": []
+}

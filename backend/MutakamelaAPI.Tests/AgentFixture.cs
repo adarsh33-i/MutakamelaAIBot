@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using MutakamelaAPI.Applications;
 using MutakamelaAPI.Browser;
 using MutakamelaAPI.Models;
+using MutakamelaAPI.Retrieval;
 using MutakamelaAPI.Rules;
 using MutakamelaAPI.Services;
 
@@ -26,7 +27,8 @@ public sealed class AgentFixture : IDisposable
             ["Agent:Browser"] = "simulated",
             ["Agent:DataDir"] = Path.Combine(DataDir, "jobs"),
             ["Agent:EvidenceDir"] = Path.Combine(DataDir, "evidence"),
-            ["AI:BaseUrl"] = "http://127.0.0.1:9/v1"
+            ["AI:BaseUrl"] = "http://127.0.0.1:9/v1",
+            ["AI:OfficialSiteKnowledgeEnabled"] = "false"
         }).Build();
     }
 
@@ -36,16 +38,22 @@ public sealed class AgentFixture : IDisposable
         services.AddLogging(b => b.SetMinimumLevel(LogLevel.Warning));
         services.AddSingleton(Config);
         services.AddHttpClient();
+        services.AddHttpClient("OfficialInsuranceSite");
         services.AddSingleton<ISessionManager, SessionManager>();
+        services.AddSingleton<IEmbeddingClient, OllamaEmbeddingClient>();
+        services.AddSingleton<IProductRetriever, ProductRetriever>();
         services.AddSingleton<IRulesEngine, RulesEngine>();
         services.AddSingleton<IFlowRegistry, FlowRegistry>();
         services.AddSingleton<IApplicationJobStore, FileApplicationJobStore>();
         services.AddSingleton<IBrowserAgent, SimulatedBrowserAgent>();
+        services.AddSingleton<ISlotExtractor, LlmSlotExtractor>();
         services.AddSingleton<IApplicationOrchestrator, ApplicationOrchestrator>();
         services.AddSingleton<IAIPolicyService>(sp => new AIPolicyService(
-            sp.GetRequiredService<IHttpClientFactory>().CreateClient(), Config,
+            sp.GetRequiredService<IHttpClientFactory>().CreateClient(),
+            sp.GetRequiredService<IHttpClientFactory>(), Config,
             sp.GetRequiredService<ILogger<AIPolicyService>>(), sp.GetRequiredService<ISessionManager>(),
-            sp.GetRequiredService<IApplicationOrchestrator>()));
+            sp.GetRequiredService<IApplicationOrchestrator>(),
+            sp.GetRequiredService<IProductRetriever>()));
         return services.BuildServiceProvider();
     }
 

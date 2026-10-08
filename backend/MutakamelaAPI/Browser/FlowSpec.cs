@@ -15,7 +15,7 @@ public class FlowSpec
     [JsonProperty("title_ar")] public string TitleAr { get; set; } = string.Empty;
     [JsonProperty("url")] public string Url { get; set; } = string.Empty;
 
-    /// <summary>read-only | write | write-with-payment-handoff</summary>
+    /// <summary>read-only | write | write-with-payment-handoff | external-form-handoff</summary>
     [JsonProperty("kind")] public string Kind { get; set; } = "read-only";
 
     /// <summary>Whether the portal requires a customer login before this journey.</summary>
@@ -23,6 +23,9 @@ public class FlowSpec
 
     /// <summary>Whether a customer approval gate is required before the final submit.</summary>
     [JsonProperty("requires_approval")] public bool RequiresApproval { get; set; }
+
+    /// <summary>Whether to hand off a prefilled public form for the customer to submit themselves.</summary>
+    [JsonProperty("external_handoff")] public bool ExternalHandoff { get; set; }
 
     /// <summary>
     /// Whether this spec has been verified against the live portal. Unverified specs

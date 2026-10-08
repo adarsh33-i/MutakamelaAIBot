@@ -20,6 +20,39 @@
       "message": "That doesn't look like a valid email address.",
       "message_ar": "هذا لا يبدو بريداً إلكترونياً صالحاً."
     },
+    "digits_10": {
+      "kind": "regex",
+      "pattern": "^\\d{10}$",
+      "message": "The ID, Iqama or CR number must be 10 digits.",
+      "message_ar": "يجب أن يتكون رقم الهوية أو الإقامة أو السجل التجاري من 10 أرقام."
+    },
+    "digits_only": {
+      "kind": "regex",
+      "pattern": "^\\d{1,30}$",
+      "message": "Enter the reference using digits only.",
+      "message_ar": "أدخل الرقم باستخدام الأرقام فقط."
+    },
+    "complaint_city": {
+      "kind": "enum",
+      "values": ["riyadh", "makkah", "jeddah", "madinah", "qassim", "eastern province", "aseer", "tabouk", "hail", "al jowf", "abha", "northen province", "other"],
+      "aliases": {
+        "riyadh": ["الرياض"],
+        "makkah": ["mecca", "مكة"],
+        "jeddah": ["جدة"],
+        "madinah": ["medina", "المدينة"],
+        "qassim": ["القصيم"],
+        "eastern province": ["المنطقة الشرقية"],
+        "aseer": ["عسير"],
+        "tabouk": ["تبوك"],
+        "hail": ["حائل"],
+        "al jowf": ["الجوف"],
+        "abha": ["أبها", "ابها"],
+        "northen province": ["northern province", "الحدود الشمالية"],
+        "other": ["أخرى", "اخرى"]
+      },
+      "message": "Choose a city from the Mutakamela complaint form list.",
+      "message_ar": "اختر مدينة من قائمة نموذج الشكاوى."
+    },
     "person_name": {
       "kind": "length",
       "min": 3,

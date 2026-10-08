@@ -28,12 +28,9 @@ public class AuditTests : IDisposable
 
     public void Dispose() { _sp.Dispose(); _fixture.Dispose(); }
 
-    private async Task<AIPolicyResponse> DriveClaimToReview(string s)
+    private async Task<AIPolicyResponse> StartClaimHandoff(string s)
     {
-        await _ai.Say(s, "I want to file a claim");
-        foreach (var a in new[] { "POL-998877", "2098765432", "NJM-556677", "2026-09-20", "Riyadh", "ABC 1234", "yes", "Rear bumper damaged" })
-            await _ai.Say(s, a);
-        var r = await _ai.Say(s, "logged in");
+        var r = await _ai.Say(s, "I want to file a claim");
         Assert.Equal(JobStatus.AwaitingApproval, r.Application!.Status);
         return r;
     }
@@ -57,22 +54,23 @@ public class AuditTests : IDisposable
     public async Task Audit01_bare_affirmative_does_not_submit(string reply)
     {
         var s = "a1" + reply.Length;
-        await DriveClaimToReview(s);
+        await StartClaimHandoff(s);
         var r = await _ai.Say(s, reply);
         Assert.Equal(JobStatus.AwaitingApproval, r.Application!.Status);
-        Assert.False(r.Application.Events.Any(e => e.Message.Contains("Clicking submit")));
+        Assert.DoesNotContain(r.Application.Events, e => e.Message.Contains("Clicking submit"));
     }
 
     [Theory]
     [InlineData("confirm")]
     [InlineData("Confirm & submit")]
     [InlineData("تأكيد")]
-    public async Task Audit01b_explicit_confirm_still_submits(string reply)
+    public async Task Audit01b_explicit_confirm_does_not_submit_external_claim(string reply)
     {
         var s = "a1b" + reply.Length;
-        await DriveClaimToReview(s);
+        await StartClaimHandoff(s);
         var r = await _ai.Say(s, reply);
-        Assert.Equal(JobStatus.Done, r.Application!.Status);
+        Assert.Equal(JobStatus.AwaitingApproval, r.Application!.Status);
+        Assert.DoesNotContain(r.Application.Events, e => e.Message.Contains("Clicking submit"));
     }
 
     // ---- Finding 2: "paid"/"yes" must not fabricate a policy number ----
@@ -133,10 +131,10 @@ public class AuditTests : IDisposable
         Assert.NotEqual(JobStatus.Cancelled, oldJob!.Status);
         Assert.Contains("discard", r.Response);
 
-        // Continuing to answer keeps the original job.
+        // The claim handoff does not invent or collect portal-only form data.
         r = await _ai.Say(s, "2098765432");
         Assert.Equal(before.Application.Id, r.Application!.Id);
-        Assert.Equal("2098765432", r.Application.Data["national_id"]);
+        Assert.DoesNotContain("national_id", r.Application.Data.Keys);
 
         // Asking again, then confirming, performs the switch.
         await _ai.Say(s, "track my claim");
@@ -158,17 +156,22 @@ public class AuditTests : IDisposable
         services.AddSingleton<IFlowRegistry, FlowRegistry>();
         services.AddSingleton<IApplicationJobStore, FileApplicationJobStore>();
         services.AddSingleton<IBrowserAgent>(new PlaywrightBrowserAgent(NullLogger<PlaywrightBrowserAgent>.Instance)); // refuses unverified flows
+        services.AddHttpClient();
+        services.AddSingleton<MutakamelaAPI.Retrieval.IEmbeddingClient, MutakamelaAPI.Retrieval.OllamaEmbeddingClient>();
+        services.AddSingleton<MutakamelaAPI.Retrieval.IProductRetriever, MutakamelaAPI.Retrieval.ProductRetriever>();
+        services.AddSingleton<ISlotExtractor, LlmSlotExtractor>();
         services.AddSingleton<IApplicationOrchestrator, ApplicationOrchestrator>();
         using var sp = services.BuildServiceProvider();
         var orch = sp.GetRequiredService<IApplicationOrchestrator>();
 
-        var start = await orch.StartAsync("a13", FlowIds.TrackAClaim, "en", new Dictionary<string, string> { ["claim_number"] = "CLM-1", ["national_id"] = "1098765432" });
+        var start = await orch.StartAsync("a13", FlowIds.BuyInsurance, "en",
+            new Dictionary<string, string> { ["product"] = "motor" });
         Assert.Equal("APP_LOGIN", start.Stage);
         var r = await orch.MarkLoginCompleteAsync(start.Application!.Id, "en");
         Assert.Equal(JobStatus.Failed, r!.Status);
         Assert.NotNull(r.FailureReason);
         Assert.Null(r.ReferenceNumber);
-        Assert.False(r.Events.Any(e => e.Message.Contains("Clicking submit")));
+        Assert.DoesNotContain(r.Events, e => e.Message.Contains("Clicking submit"));
         fixture.Dispose();
     }
 
@@ -182,7 +185,8 @@ public class AuditTests : IDisposable
         var patched = await _orchestrator.ApplyDataAsync(id, new Dictionary<string, string> { ["claim_number"] = "CLM-5", ["national_id"] = "bad" }, "en");
         Assert.Equal("CLM-5", patched!.Data["claim_number"]);
         Assert.DoesNotContain("national_id", patched.Data.Keys);
-        Assert.Contains("national_id", patched.MissingFields);
+        Assert.Empty(patched.MissingFields);
+        Assert.Equal(JobStatus.AwaitingApproval, patched.Status);
         var cancelled = await _orchestrator.CancelAsync(id, "en");
         Assert.Equal(JobStatus.Cancelled, cancelled!.Status);
         Assert.Null(await _sp.GetRequiredService<IApplicationJobStore>().GetActiveForSessionAsync("a12a"));
@@ -202,8 +206,8 @@ public class AuditTests : IDisposable
     {
         var start = await _orchestrator.StartAsync("a12c", FlowIds.MakeAClaim, "en");
         var r = await _orchestrator.ApproveAsync(start.Application!.Id, "en");
-        Assert.Equal(JobStatus.Collecting, r!.Status);
-        Assert.False(r.Events.Any(e => e.Message.Contains("Clicking submit")));
+        Assert.Equal(JobStatus.AwaitingApproval, r!.Status);
+        Assert.DoesNotContain(r.Events, e => e.Message.Contains("Clicking submit"));
     }
 
     // ---- Finding 11: value extraction must not misfire on ordinary words ----
@@ -237,11 +241,10 @@ public class AuditTests : IDisposable
     public async Task Audit07_session_history_records_job_outcome()
     {
         var s = "a7";
-        await DriveClaimToReview(s);
+        await StartClaimHandoff(s);
         await _ai.Say(s, "confirm");
         var session = _sp.GetRequiredService<ISessionManager>().GetOrCreateSession(s);
         var text = session.GetConversationText();
-        Assert.True(text.Contains("Done:") || text.Contains("claim number", StringComparison.OrdinalIgnoreCase),
-            "session history has no record of the job outcome:\n" + text);
+        Assert.Contains("official motor-claim form", text, StringComparison.OrdinalIgnoreCase);
     }
 }

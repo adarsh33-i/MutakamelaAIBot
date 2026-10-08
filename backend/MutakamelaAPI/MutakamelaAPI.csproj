@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <None Update="Data\products.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Data\eval_queries.jsonl" CopyToOutputDirectory="PreserveNewest" />
     <None Update="Browser\Flows\*.json" CopyToOutputDirectory="PreserveNewest" />
     <None Update="Rules\*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

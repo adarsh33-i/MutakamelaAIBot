@@ -553,7 +553,7 @@ CHAT_HTML = '''
 
         .category-buttons {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            grid-template-columns: repeat(6, minmax(0, 1fr));
             gap: 6px;
         }
 
@@ -641,6 +641,7 @@ CHAT_HTML = '''
         .application-card ul { margin: 8px 0 0; padding-inline-start: 18px; }
         .application-card li { margin: 2px 0; font-size: 0.92em; }
         .application-card .app-ref { margin-top: 8px; font-weight: 600; }
+        .application-card .app-source { font-size: 0.72em; opacity: 0.65; margin-inline-start: 6px; font-style: italic; }
         .application-card .app-disclaimer { margin-top: 8px; font-size: 0.8em; opacity: 0.75; }
         .application-card[data-status="Failed"] h4, .application-card[data-status="Cancelled"] h4 { color: #c62828; }
         .application-card[data-status="Done"] h4 { color: #2e7d32; }
@@ -676,6 +677,53 @@ CHAT_HTML = '''
             display: flex;
             gap: 10px;
             align-items: center;
+        }
+
+        .complaint-product-picker {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .complaint-product-picker select {
+            min-width: 0;
+            flex: 1;
+            padding: 9px 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: white;
+            color: var(--text);
+            font: inherit;
+            font-size: 0.88rem;
+        }
+
+        .complaint-product-picker button {
+            border: 0;
+            border-radius: 8px;
+            padding: 8px 12px;
+            background: var(--primary);
+            color: white;
+            cursor: pointer;
+            font: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .complaint-product-picker button:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+        .complaint-product-fallback {
+            margin-top: 8px;
+            color: var(--text-light);
+            font-size: 0.82rem;
+        }
+
+        .attachment-help {
+            flex-basis: 100%;
+            color: var(--text-light);
+            font-size: 0.75rem;
         }
 
         .chat-input input {
@@ -900,7 +948,7 @@ CHAT_HTML = '''
         <div class="category-section">
             <div class="category-label" data-i18n="quickOptions">Quick Options</div>
             <div class="category-buttons">
-                <button class="category-btn motor" onclick="handleCategoryClick(event, 'I need motor insurance')">
+                <button class="category-btn motor" onclick="handleCategoryClick(event, 'Motor Insurance')">
                     <div class="icon-bg"><i class="fas fa-car icon"></i></div>
                     <span class="label" data-i18n="motor">Motor</span>
                 </button>
@@ -918,12 +966,17 @@ CHAT_HTML = '''
                 </button>
                 <button class="category-btn claims" onclick="handleCategoryClick(event, 'I want to file a claim')">
                     <div class="icon-bg"><i class="fas fa-file-alt icon"></i></div>
-                    <span class="label" data-i18n="claims">Claims</span>
+                    <span class="label" data-i18n="fileClaim">File claim</span>
+                </button>
+                <button class="category-btn claims" onclick="handleCategoryClick(event, 'Track my claim')">
+                    <div class="icon-bg"><i class="fas fa-search icon"></i></div>
+                    <span class="label" data-i18n="trackClaim">Track claim</span>
                 </button>
             </div>
         </div>
 
         <div class="chat-input">
+            <input type="file" id="complaintAttachmentInput" accept=".pdf,.jpg,.jpeg,.doc,.docx" multiple hidden onchange="handleComplaintFiles(this.files); this.value=''">
             <input type="text" id="messageInput" placeholder="Type your message..." data-i18n-placeholder="messagePlaceholder" onkeypress="handleKeyPress(event)">
             <button class="send-btn" onclick="sendMessage()" title="Send message" data-i18n-title="sendMessage" aria-label="Send message">
                 <i class="fas fa-paper-plane"></i>
@@ -969,18 +1022,311 @@ CHAT_HTML = '''
         let displayHistory = [];
         let messageInFlight = false;
         let audioContext = null;
+        let portalExtensionReady = false;
+        const complaintAttachments = [];
+        const savedComplaintJobId = sessionStorage.getItem('mutakamela_active_complaint_job') || '';
+        let activeComplaintJobId = /^[a-zA-Z0-9-]{1,80}$/.test(savedComplaintJobId) ? savedComplaintJobId : '';
+        let attachmentTransferInFlight = false;
+        let pendingComplaintApplication = null;
+        let complaintHandoffMessage = '';
+        const portalFileRequests = new Map();
+        const portalLaunchRequests = new Map();
+        let complaintProductsLoaded = false;
+        let complaintProductOptions = [];
+        window.addEventListener('message', event => {
+            if (event.source !== window || event.origin !== window.location.origin || !event.data) return;
+            if (event.data.type === 'MUTAKAMELA_EXTENSION_READY') {
+                portalExtensionReady = true;
+                requestComplaintProducts();
+                return;
+            }
+            if (event.data.type === 'MUTAKAMELA_PORTAL_OPENED') {
+                const resolve = portalLaunchRequests.get(event.data.jobId);
+                if (resolve) {
+                    portalLaunchRequests.delete(event.data.jobId);
+                    resolve(event.data);
+                }
+            }
+            if (['MUTAKAMELA_COMPLAINT_FILE_STORED', 'MUTAKAMELA_COMPLAINT_FILES_ATTACHED'].includes(event.data.type)) {
+                const resolve = portalFileRequests.get(event.data.requestId);
+                if (resolve) {
+                    portalFileRequests.delete(event.data.requestId);
+                    resolve(event.data);
+                }
+            }
+            if (event.data.type === 'MUTAKAMELA_COMPLAINT_PRODUCTS') {
+                if (event.data.error) {
+                    console.error('Could not load Mutakamela complaint products:', event.data.error);
+                    showComplaintProducts([]);
+                } else {
+                    showComplaintProducts(event.data.products);
+                }
+            }
+            if (event.data.type === 'MUTAKAMELA_COMPLAINT_SUBMISSION_CONFIRMED') {
+                showComplaintSubmissionConfirmation(event.data.jobId, event.data.complaintNumber);
+            }
+        });
         const interfaceText = {
             en: {
                 quickOptions: 'Quick Options', motor: 'Motor', health: 'Health', travel: 'Travel',
-                property: 'Property', claims: 'Claims', messagePlaceholder: 'Type your message...',
-                newChat: 'New Chat', sendMessage: 'Send message', toggleTheme: 'Toggle Dark Mode'
+                property: 'Property', fileClaim: 'File claim', trackClaim: 'Track claim', messagePlaceholder: 'Type your message...',
+                newChat: 'New Chat', sendMessage: 'Send message', toggleTheme: 'Toggle Dark Mode',
+                chooseFile: 'Choose file', selectProduct: 'Select product', loadingProducts: 'Loading products…',
+                productListUnavailable: 'Product list unavailable; type the product in chat',
+                useProduct: 'Use product',
+                chooseProductInChat: 'Choose a product here, or type its name or code in the chat.',
+                productListUnavailable: 'The product list is unavailable. Type the product name or code in the chat.',
+                complaintAttachmentPrompt: 'Choose one or more supporting documents to open the complaint form.',
+                chooseComplaintFiles: 'Choose file',
+                complaintHandoffWorking: 'Opening the complaint form and attaching your selected documents…',
+                complaintHandoffSuccess: 'The complaint form is open and your selected documents were attached. Review the form and submit it yourself.',
+                complaintHandoffUnavailable: 'Automatic opening and attachment require the Mutakamela browser extension. Install or reload the extension, then choose your file again.',
+                complaintHandoffFailed: 'The complaint form opened, but automatic attachment could not be confirmed. Your documents remain in this chat; choose the files again to retry.',
+                complaintSubmitted: 'Mutakamela confirmed that your complaint was submitted successfully.',
+                complaintWhatNext: 'Your complaint request is now closed. Is there anything else I can help you with?',
+                browseProducts: 'Browse products',
+                startOverLabel: 'Start over',
+                complaintNumberLabel: 'Complaint number',
+                complaintNumberAdvice: 'Keep this number for your records.',
+                claimFormManual: 'The official claim page opened. Enter your identity details and date of birth there, make the authorization decision yourself, then complete and submit your claim on the portal. Nothing was submitted by chat.',
+                claimTrackingManual: 'The official tracking page opened. Enter your ID/Iqama/CR there, review the prefilled claim number, and click Track Status yourself. No lookup was sent by chat.',
+                claimTrackingAutofilled: 'The official tracking page opened and the claim number was filled. Enter your ID/Iqama/CR there and click Track Status yourself; no lookup was sent automatically.',
+                claimTrackingExtensionRequired: 'The tracking form is ready. Install or reload the Mutakamela browser extension to open it and fill the claim number automatically, or use the portal link below.',
+                claimFormExtensionRequired: 'The official claim form is ready. Install or reload the Mutakamela browser extension to open it, or use the portal link below. Enter identity details and consent only on Mutakamela’s site.',
+                attachmentPrivacy: 'Complaint files stay in this browser and are not sent to the chat or AI service. PDF, JPG, JPEG, DOC, or DOCX; up to 2 MB per file.',
+                invalidAttachment: 'Only PDF, JPG, JPEG, DOC, and DOCX files up to 2 MB each are accepted.',
             },
             ar: {
                 quickOptions: 'خيارات سريعة', motor: 'المركبات', health: 'الصحي', travel: 'السفر',
-                property: 'الممتلكات', claims: 'المطالبات', messagePlaceholder: 'اكتب رسالتك...',
-                newChat: 'محادثة جديدة', sendMessage: 'إرسال الرسالة', toggleTheme: 'تبديل المظهر الداكن'
+                property: 'الممتلكات', fileClaim: 'تقديم مطالبة', trackClaim: 'تتبع مطالبة', messagePlaceholder: 'اكتب رسالتك...',
+                newChat: 'محادثة جديدة', sendMessage: 'إرسال الرسالة', toggleTheme: 'تبديل المظهر الداكن',
+                chooseFile: 'اختيار ملف', selectProduct: 'اختر المنتج', loadingProducts: 'جارٍ تحميل المنتجات…',
+                productListUnavailable: 'قائمة المنتجات غير متاحة؛ اكتب اسم المنتج في المحادثة',
+                useProduct: 'استخدم المنتج',
+                chooseProductInChat: 'اختر المنتج هنا، أو اكتب اسمه أو رمزه في المحادثة.',
+                productListUnavailable: 'قائمة المنتجات غير متاحة. اكتب اسم المنتج أو رمزه في المحادثة.',
+                complaintAttachmentPrompt: 'اختر مستنداً داعماً واحداً أو أكثر لفتح نموذج الشكوى.',
+                chooseComplaintFiles: 'اختيار ملف',
+                complaintHandoffWorking: 'جارٍ فتح نموذج الشكوى وإرفاق المستندات المحددة…',
+                complaintHandoffSuccess: 'تم فتح نموذج الشكوى وإرفاق المستندات المحددة. راجع النموذج وأرسله بنفسك.',
+                complaintHandoffUnavailable: 'يتطلب الفتح والإرفاق التلقائيان امتداد متكاملة للمتصفح. ثبّت الامتداد أو أعد تحميله ثم اختر الملف مرة أخرى.',
+                complaintHandoffFailed: 'تم فتح نموذج الشكوى، ولكن لم يتأكد الإرفاق التلقائي. لا تزال المستندات محفوظة في المحادثة؛ اختر الملفات مرة أخرى لإعادة المحاولة.',
+                complaintSubmitted: 'أكدت متكاملة استلام شكواك وإرسالها بنجاح.',
+                complaintWhatNext: 'تم إغلاق طلب الشكوى الآن. هل هناك شيء آخر يمكنني مساعدتك به؟',
+                browseProducts: 'تصفح المنتجات',
+                startOverLabel: 'ابدأ من جديد',
+                complaintNumberLabel: 'رقم الشكوى',
+                complaintNumberAdvice: 'احتفظ بهذا الرقم لسجلاتك.',
+                claimFormManual: 'تم فتح صفحة المطالبة الرسمية. أدخل بيانات هويتك وتاريخ ميلادك هناك، واتخذ قرار التفويض بنفسك، ثم أكمل المطالبة وأرسلها عبر البوابة. لم يُرسل شيء من المحادثة.',
+                claimTrackingManual: 'تم فتح صفحة التتبع الرسمية. أدخل رقم الهوية/الإقامة/السجل التجاري هناك، وراجع رقم المطالبة المعبأ، ثم اضغط Track Status بنفسك. لم يُرسل استعلام من المحادثة.',
+                claimTrackingAutofilled: 'تم فتح صفحة التتبع الرسمية وتعبئة رقم المطالبة. أدخل رقم الهوية/الإقامة/السجل التجاري هناك واضغط Track Status بنفسك؛ لم يُرسل استعلام تلقائياً.',
+                claimTrackingExtensionRequired: 'نموذج التتبع جاهز. ثبّت امتداد متكاملة للمتصفح أو أعد تحميله لفتح النموذج وتعبئة رقم المطالبة تلقائياً، أو استخدم رابط البوابة أدناه.',
+                claimFormExtensionRequired: 'نموذج المطالبة الرسمي جاهز. ثبّت امتداد متكاملة للمتصفح أو أعد تحميله لفتح النموذج، أو استخدم رابط البوابة أدناه. أدخل بيانات الهوية والموافقة على موقع متكاملة فقط.',
+                attachmentPrivacy: 'تبقى ملفات الشكوى في هذا المتصفح ولا تُرسل إلى المحادثة أو خدمة الذكاء الاصطناعي. PDF أو JPG أو JPEG أو DOC أو DOCX؛ بحد أقصى 2 ميجابايت لكل ملف.',
+                invalidAttachment: 'يُقبل فقط PDF وJPG وJPEG وDOC وDOCX بحد أقصى 2 ميجابايت لكل ملف.',
             }
         };
+
+        const complaintFileTypes = new Set(['pdf', 'jpg', 'jpeg', 'doc', 'docx']);
+        const complaintFileMaxBytes = 2 * 1024 * 1024;
+
+        function requestComplaintProducts() {
+            if (!portalExtensionReady || complaintProductsLoaded) return;
+            const requestId = crypto.randomUUID();
+            window.postMessage({
+                type: 'MUTAKAMELA_GET_COMPLAINT_PRODUCTS',
+                requestId
+            }, window.location.origin);
+        }
+
+        function showComplaintProducts(products) {
+            if (!Array.isArray(products)) return;
+            complaintProductOptions = products
+                .filter(product => product && typeof product.name === 'string' && product.name.trim() &&
+                    typeof product.code === 'string' && product.code.trim())
+                .slice(0, 200);
+            complaintProductsLoaded = true;
+            refreshComplaintProductPrompts();
+        }
+
+        function buildComplaintProductPicker() {
+            const labels = interfaceText[currentLang] || interfaceText.en;
+            if (!complaintProductOptions.length) {
+                const fallback = complaintProductsLoaded
+                    ? labels.productListUnavailable
+                    : labels.chooseProductInChat;
+                return `<div class="complaint-product-choice">${escapeHTML(fallback)}</div>`;
+            }
+            const options = complaintProductOptions.map(product =>
+                `<option value="${escapeHTML(product.name)}">${escapeHTML(product.name)} (${escapeHTML(product.code)})</option>`
+            ).join('');
+            return `<div class="complaint-product-choice">
+                <div class="complaint-product-picker">
+                <select aria-label="${escapeHTML(labels.selectProduct)}">
+                    <option value="">${escapeHTML(labels.selectProduct)}</option>
+                    ${options}
+                </select>
+                <button class="quick-reply" type="button" disabled>${escapeHTML(labels.useProduct)}</button>
+                </div>
+            </div>`;
+        }
+
+        function attachComplaintProductPromptHandlers(bubble) {
+            bubble.querySelectorAll('.complaint-product-choice select').forEach(select => {
+                const button = select.parentElement.querySelector('button');
+                select.addEventListener('change', () => {
+                    button.disabled = !select.value || messageInFlight;
+                });
+                button.addEventListener('click', () => selectComplaintProduct(select.value));
+            });
+        }
+
+        function refreshComplaintProductPrompts() {
+            document.querySelectorAll('#chatMessages [data-complaint-product-prompt="true"]').forEach(bubble => {
+                const existing = bubble.querySelector('.complaint-product-choice');
+                if (existing) existing.outerHTML = buildComplaintProductPicker();
+                else bubble.insertAdjacentHTML('beforeend', buildComplaintProductPicker());
+                attachComplaintProductPromptHandlers(bubble);
+            });
+        }
+
+        function selectComplaintProduct(productName) {
+            if (typeof productName === 'string' && productName) sendQuick(productName);
+        }
+
+        function extensionRequest(type, payload, timeoutMs = 15000) {
+            if (!portalExtensionReady) return Promise.resolve({ ok: false, error: 'The browser extension is not connected.' });
+            const requestId = crypto.randomUUID();
+            return new Promise(resolve => {
+                const timer = window.setTimeout(() => {
+                    portalFileRequests.delete(requestId);
+                    resolve({ ok: false, error: 'The browser extension did not respond in time.' });
+                }, timeoutMs);
+                portalFileRequests.set(requestId, response => {
+                    window.clearTimeout(timer);
+                    resolve(response);
+                });
+                window.postMessage({ type, requestId, ...payload }, window.location.origin);
+            });
+        }
+
+        async function handleComplaintFiles(fileList) {
+            const invalidFiles = [];
+            for (const file of Array.from(fileList || [])) {
+                const extension = file.name.split('.').pop()?.toLowerCase();
+                if (!extension || !complaintFileTypes.has(extension) || file.size > complaintFileMaxBytes) {
+                    invalidFiles.push(file.name);
+                    continue;
+                }
+                complaintAttachments.push(file);
+            }
+            if (invalidFiles.length) {
+                const message = interfaceText[currentLang]?.invalidAttachment || interfaceText.en.invalidAttachment;
+                addMessage(`${message} ${invalidFiles.map(escapeHTML).join(', ')}`, false);
+            }
+            if (complaintAttachments.length) await launchComplaintWithAttachments();
+        }
+
+        function complaintAttachmentChoiceKey(application) {
+            return `mutakamela_complaint_attachment_choice_${application.id}`;
+        }
+
+        function buildComplaintAttachmentPrompt() {
+            const labels = interfaceText[currentLang] || interfaceText.en;
+            return `<div class="complaint-attachment-prompt">
+                <p>${escapeHTML(labels.complaintAttachmentPrompt)}</p>
+                <div class="quick-replies">
+                    <button class="quick-reply complaint-choose-files" type="button"><i class="fas fa-paperclip"></i> ${escapeHTML(labels.chooseComplaintFiles)}</button>
+                </div>
+                <div class="attachment-help">${escapeHTML(labels.attachmentPrivacy)}</div>
+                <div class="complaint-attachment-status" role="status">${escapeHTML(complaintHandoffMessage)}</div>
+            </div>`;
+        }
+
+        function bindComplaintAttachmentPrompt(bubble) {
+            bubble.querySelector('.complaint-choose-files')?.addEventListener('click', () => {
+                if (!attachmentTransferInFlight) document.getElementById('complaintAttachmentInput').click();
+            });
+        }
+
+        function refreshComplaintAttachmentPrompts() {
+            document.querySelectorAll('#chatMessages [data-complaint-attachment-prompt="true"]').forEach(bubble => {
+                const status = bubble.querySelector('.complaint-attachment-status');
+                const button = bubble.querySelector('.complaint-choose-files');
+                if (status) status.textContent = complaintHandoffMessage;
+                if (button) button.disabled = attachmentTransferInFlight;
+            });
+        }
+
+        async function launchComplaintWithAttachments() {
+            const application = pendingComplaintApplication;
+            if (!application || attachmentTransferInFlight || !complaintAttachments.length) return;
+            attachmentTransferInFlight = true;
+            complaintHandoffMessage = interfaceText[currentLang]?.complaintHandoffWorking ||
+                interfaceText.en.complaintHandoffWorking;
+            sessionStorage.setItem(complaintAttachmentChoiceKey(application), 'files');
+            refreshComplaintAttachmentPrompts();
+            try {
+                let portalLaunch;
+                if (activeComplaintJobId === application.id) {
+                    portalLaunch = { opened: true, autofillReady: true };
+                } else {
+                    portalLaunch = await openPortalForApplication(application);
+                }
+                if (!portalLaunch?.opened) {
+                    sessionStorage.removeItem(complaintAttachmentChoiceKey(application));
+                    complaintHandoffMessage = portalLaunch?.error ||
+                        interfaceText[currentLang]?.complaintHandoffUnavailable ||
+                        interfaceText.en.complaintHandoffUnavailable;
+                    return;
+                }
+                const result = await transferComplaintAttachments(application.id);
+                complaintHandoffMessage = result.attached > 0
+                    ? (interfaceText[currentLang]?.complaintHandoffSuccess || interfaceText.en.complaintHandoffSuccess)
+                    : (interfaceText[currentLang]?.complaintHandoffFailed || interfaceText.en.complaintHandoffFailed);
+            } catch (error) {
+                console.error('Could not complete the complaint handoff:', error);
+                complaintHandoffMessage = error instanceof Error ? error.message :
+                    (interfaceText[currentLang]?.complaintHandoffFailed || interfaceText.en.complaintHandoffFailed);
+            } finally {
+                attachmentTransferInFlight = false;
+                refreshComplaintAttachmentPrompts();
+            }
+        }
+
+        function arrayBufferToBase64(buffer) {
+            const bytes = new Uint8Array(buffer);
+            let binary = '';
+            const chunkSize = 0x8000;
+            for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+                binary += String.fromCharCode(...bytes.subarray(offset, offset + chunkSize));
+            }
+            return btoa(binary);
+        }
+
+        async function transferComplaintAttachments(jobId) {
+            if (!complaintAttachments.length) return { attached: 0 };
+            const transferred = [];
+            for (const file of complaintAttachments) {
+                const contentBase64 = arrayBufferToBase64(await file.arrayBuffer());
+                const stored = await extensionRequest('MUTAKAMELA_STORE_COMPLAINT_FILE', {
+                        jobId,
+                        attachment: {
+                            id: crypto.randomUUID(),
+                            name: file.name,
+                            size: file.size,
+                            contentBase64
+                        }
+                    });
+                if (stored.stored !== true) throw new Error(stored.error || `Could not transfer ${file.name}.`);
+                transferred.push(file);
+            }
+            const attached = await extensionRequest('MUTAKAMELA_ATTACH_COMPLAINT_FILES', { jobId }, 45000);
+            if (attached.attached !== true) throw new Error(attached.error || 'The extension could not attach the complaint documents.');
+            complaintAttachments.splice(0, transferred.length);
+            refreshComplaintAttachmentPrompts();
+            return { attached: transferred.length };
+        }
 
         function normalizeStoredMessages(messages, allowedRoles, maximum) {
             if (!Array.isArray(messages)) return [];
@@ -996,8 +1342,13 @@ CHAT_HTML = '''
                         normalized.stage = validChatStages.has(storedStage) ? storedStage : inferStoredStage(normalized.content);
                         normalized.isClaims = item.isClaims === true || /claim.*hotline|hotline.*claim/i.test(normalized.content);
                         normalized.isComplete = item.isComplete === true || normalized.stage === 'COMPLETE';
+                        normalized.complaintProductPrompt = item.complaintProductPrompt === true;
+                        normalized.externalHandoff = item.externalHandoff === true ||
+                            (normalized.stage === 'APP_REVIEW' && /complaint|شكوى/i.test(normalized.content)) ||
+                            /complaint ready for handoff|complaint details are ready/i.test(normalized.content);
                         if (typeof item.retryMessage === 'string') normalized.retryMessage = item.retryMessage.slice(0, 4000);
-                        if (typeof item.portalUrl === 'string' && /^https:\/\/eservices\.mutakamela\.sa\//.test(item.portalUrl)) normalized.portalUrl = item.portalUrl;
+                        normalized.pendingConfirmation = item.pendingConfirmation === true;
+                        if (typeof item.portalUrl === 'string' && /^https:\\/\\/eservices\\.mutakamela\\.sa\\//.test(item.portalUrl)) normalized.portalUrl = item.portalUrl;
                         if (Array.isArray(item.productOptions)) {
                             normalized.productOptions = item.productOptions
                                 .filter(option => option && typeof option.name === 'string' && option.name.trim())
@@ -1080,6 +1431,10 @@ CHAT_HTML = '''
                 : null);
             if (!saved) return;
 
+            const isComplaintConversation = saved.messages.some(message =>
+                message.role === 'assistant' && message.complaintProductPrompt === true);
+            const hasComplaintHandoff = saved.messages.some(message =>
+                message.role === 'assistant' && message.externalHandoff === true);
             conversationHistory = saved.conversation;
             displayHistory = saved.messages;
             displayHistory.forEach(message => addMessage(message.content, message.role === 'user', {
@@ -1091,10 +1446,35 @@ CHAT_HTML = '''
                 retryMessage: message.retryMessage,
                 portalUrl: message.portalUrl,
                 productOptions: message.productOptions,
-                restoreActions: true
+                complaintProductPrompt: message.complaintProductPrompt === true,
+                externalHandoff: message.externalHandoff === true,
+                pendingConfirmation: message.pendingConfirmation === true,
+                restoreActions: !isComplaintConversation || message.pendingConfirmation === true
             }));
             saveChatHistory();
             if (legacySessionId) localStorage.removeItem('mutakamela_chat_' + legacySessionId);
+            if (isComplaintConversation || hasComplaintHandoff) void restoreActiveComplaintHandoff();
+        }
+
+        async function restoreActiveComplaintHandoff() {
+            try {
+                const response = await fetch(
+                    `${apiBaseUrl}/api/applications?sessionId=${encodeURIComponent(sessionId)}&limit=50`
+                );
+                if (!response.ok) throw new Error(`Could not restore the complaint handoff (${response.status}).`);
+                const jobs = await response.json();
+                if (!Array.isArray(jobs)) throw new Error('Invalid active application list.');
+                const application = jobs.find(job => job?.flowId === 'submit-complaint' &&
+                    job.status === 'AwaitingApproval');
+                if (!application) return;
+                pendingComplaintApplication = application;
+                if (sessionStorage.getItem(complaintAttachmentChoiceKey(application)) ||
+                    document.querySelector('#chatMessages [data-complaint-attachment-prompt="true"]')) return;
+                addMessage(application.statusMessage || 'Your complaint details are ready.',
+                    false, { persist: false, complaintAttachmentPrompt: true });
+            } catch (error) {
+                console.error('Could not restore the complaint handoff:', error);
+            }
         }
 
         // Initialize on load
@@ -1120,11 +1500,15 @@ CHAT_HTML = '''
             document.querySelectorAll('[data-i18n-title]').forEach(element => {
                 element.title = labels[element.dataset.i18nTitle];
             });
+            document.querySelectorAll('[data-i18n-aria-label]').forEach(element => {
+                element.setAttribute('aria-label', labels[element.dataset.i18nAriaLabel]);
+            });
             document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
                 element.placeholder = labels[element.dataset.i18nPlaceholder];
             });
             document.documentElement.lang = currentLang;
             document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+            refreshComplaintAttachmentPrompts();
         }
 
         function getActionLabels(language) {
@@ -1140,7 +1524,7 @@ CHAT_HTML = '''
                     confirmSubmit: 'تأكيد والإرسال', cancelRequest: 'إلغاء الطلب',
                     openPortal: 'فتح بوابة متكاملة', loggedIn: 'سجلت الدخول',
                     payNow: 'إكمال الدفع', paid: 'تم الدفع', trackClaim: 'تتبع المطالبة',
-                    fileClaim: 'تقديم مطالبة', buyMotor: 'شراء تأمين مركبات'
+                    fileClaim: 'تقديم مطالبة', buyMotor: 'شراء تأمين مركبات', yes: 'نعم', no: 'لا'
                 }
                 : {
                     moreDetails: 'More details', comparePlans: 'Compare other plans',
@@ -1153,22 +1537,99 @@ CHAT_HTML = '''
                     confirmSubmit: 'Confirm & submit', cancelRequest: 'Cancel request',
                     openPortal: 'Open Mutakamela portal', loggedIn: "I've logged in",
                     payNow: 'Complete payment', paid: 'I have paid', trackClaim: 'Track claim',
-                    fileClaim: 'File a claim', buyMotor: 'Buy motor insurance'
+                    fileClaim: 'File a claim', buyMotor: 'Buy motor insurance', yes: 'Yes, correct', no: 'No'
                 };
+        }
+
+        async function openPortalForApplication(application) {
+            if (!application?.id || !['AwaitingLogin', 'AwaitingApproval'].includes(application.status)) return null;
+            if (application.outputs?.externalSubmissionReported === 'true') return null;
+            if (application.flowId === 'submit-complaint' &&
+                !sessionStorage.getItem(complaintAttachmentChoiceKey(application))) return null;
+            if (!portalExtensionReady) {
+                if (application.flowId === 'submit-complaint')
+                    return { opened: false, error: interfaceText[currentLang]?.complaintHandoffUnavailable ||
+                        interfaceText.en.complaintHandoffUnavailable };
+                if (application.flowId === 'make-a-claim' || application.flowId === 'track-a-claim')
+                    return { opened: false, error: interfaceText[currentLang]?.[
+                        application.flowId === 'track-a-claim'
+                            ? 'claimTrackingExtensionRequired'
+                            : 'claimFormExtensionRequired'
+                    ] };
+                return null;
+            }
+
+            try {
+                const response = await fetch(`${apiBaseUrl}/api/applications/flows`);
+                if (!response.ok) throw new Error(`Flow metadata request failed (${response.status})`);
+                const flows = await response.json();
+                const flow = Array.isArray(flows) ? flows.find(item => item.id === application.flowId) : null;
+                if (!flow) throw new Error(`No flow metadata found for ${application.flowId}`);
+                const externalHandoff = flow.externalHandoff === true;
+                if (application.status === 'AwaitingApproval' && !externalHandoff) return null;
+                if (application.status === 'AwaitingLogin' && externalHandoff) return null;
+                const key = `mutakamela_portal_opened_${application.id}_${application.updatedAt || ''}`;
+                if (sessionStorage.getItem(key)) return null;
+
+                const payload = {
+                    jobId: application.id,
+                    flowId: flow.id,
+                    verified: flow.verified === true,
+                    externalHandoff,
+                    fields: flow.verified === true
+                        ? (flow.fields || []).filter(field => field.sensitive !== true)
+                        : [],
+                    data: flow.verified === true ? (application.data || application.Data || {}) : {}
+                };
+                const opened = await new Promise(resolve => {
+                    const timer = window.setTimeout(() => {
+                        portalLaunchRequests.delete(application.id);
+                        resolve(null);
+                    }, 3000);
+                    portalLaunchRequests.set(application.id, result => {
+                        window.clearTimeout(timer);
+                        resolve(result);
+                    });
+                    window.postMessage({ type: 'MUTAKAMELA_OPEN_PORTAL', payload }, window.location.origin);
+                });
+                if (opened?.opened) {
+                    sessionStorage.setItem(key, 'true');
+                    if (application.flowId === 'submit-complaint') {
+                        activeComplaintJobId = application.id;
+                        sessionStorage.setItem('mutakamela_active_complaint_job', activeComplaintJobId);
+                    }
+                    return opened;
+                }
+                portalExtensionReady = false;
+                return opened || { opened: false };
+            } catch (error) {
+                console.error('Could not open the portal automatically:', error);
+                return {
+                    opened: false,
+                    error: error instanceof Error ? error.message :
+                        (interfaceText[currentLang]?.complaintHandoffFailed || interfaceText.en.complaintHandoffFailed)
+                };
+            }
         }
 
         // Quick replies for the agentic portal journeys. Every message maps to a
         // plain-text command the orchestrator understands; approval is always explicit.
-        function buildAgentActions(stage, labels, portalUrl) {
+        function buildAgentActions(stage, labels, portalUrl, portalOpenedAutomatically, externalHandoff, pendingConfirmation) {
             const portal = portalUrl || 'https://eservices.mutakamela.sa/myInsurance';
             switch (stage) {
                 case 'APP_LOGIN':
                     return [
-                        { icon: 'fa-external-link-alt', label: labels.openPortal, href: portal },
+                        ...(!portalOpenedAutomatically ? [{ icon: 'fa-external-link-alt', label: labels.openPortal, href: portal }] : []),
                         { icon: 'fa-check', label: labels.loggedIn, message: 'logged in' },
                         { icon: 'fa-times', label: labels.cancelRequest, message: 'cancel' }
                     ];
                 case 'APP_REVIEW':
+                    if (externalHandoff) {
+                        return portalOpenedAutomatically ? [] : [
+                            { icon: 'fa-external-link-alt', label: labels.openPortal, href: portal },
+                            { icon: 'fa-times', label: labels.cancelRequest, message: 'cancel' }
+                        ];
+                    }
                     return [
                         { icon: 'fa-check', label: labels.confirmSubmit, message: 'confirm' },
                         { icon: 'fa-edit', label: labels.editDetails, message: 'edit' },
@@ -1181,6 +1642,14 @@ CHAT_HTML = '''
                         { icon: 'fa-times', label: labels.cancelRequest, message: 'cancel' }
                     ];
                 case 'APP_COLLECT':
+                    if (pendingConfirmation) {
+                        return [
+                            { icon: 'fa-check', label: labels.yes, message: 'yes' },
+                            { icon: 'fa-times', label: labels.no, message: 'no' },
+                            { icon: 'fa-ban', label: labels.cancelRequest, message: 'cancel' }
+                        ];
+                    }
+                    return [{ icon: 'fa-times', label: labels.cancelRequest, message: 'cancel' }];
                 case 'APP_OTP':
                 case 'APP_EDIT':
                     return [{ icon: 'fa-times', label: labels.cancelRequest, message: 'cancel' }];
@@ -1198,8 +1667,18 @@ CHAT_HTML = '''
         }
 
         // Status/review card rendered from the job object returned by the .NET API.
+        // Where a review value came from, so the customer can see what the assistant inferred.
+        function sourceBadge(source, ar) {
+            const labels = ar
+                ? { extracted: 'مستخرج من رسالتك', retrieved: 'مطابق من الكتالوج', portal: 'من البوابة', provided: 'مُقدَّم' }
+                : { extracted: 'from your message', retrieved: 'matched from catalog', portal: 'from portal', provided: 'provided' };
+            const text = labels[source];
+            return text ? ` <span class="app-source">${escapeHTML(text)}</span>` : '';
+        }
+
         function buildApplicationCard(application, language) {
             if (!application || typeof application !== 'object') return '';
+            if (application.outputs?.externalSubmissionReported === 'true') return '';
             const ar = language === 'ar';
             const status = ar ? application.statusMessageAr : application.statusMessage;
             const review = application.review || {};
@@ -1210,7 +1689,7 @@ CHAT_HTML = '''
             return `
                 <div class="product-card application-card" data-status="${escapeHTML(application.status || '')}">
                     <h4><i class="fas fa-robot"></i> ${escapeHTML(status || application.status || '')}</h4>
-                    ${showLines ? '<ul>' + lines.map(line => `<li><strong>${escapeHTML(ar ? (line.labelAr || line.label) : line.label)}:</strong> ${escapeHTML(line.value)}</li>`).join('') + '</ul>' : ''}
+                    ${showLines ? '<ul>' + lines.map(line => `<li><strong>${escapeHTML(ar ? (line.labelAr || line.label) : line.label)}:</strong> ${escapeHTML(line.value)}${sourceBadge(line.source, ar)}</li>`).join('') + '</ul>' : ''}
                     ${ref}
                     ${showLines && disclaimer ? `<div class="app-disclaimer">${escapeHTML(disclaimer)}</div>` : ''}
                 </div>`;
@@ -1259,7 +1738,7 @@ CHAT_HTML = '''
                     { icon: 'fa-th-list', label: labels.comparePlans, message: 'Show me other options' }
                 ];
             } else if (stage.startsWith('APP_')) {
-                actions = buildAgentActions(stage, labels, options.portalUrl);
+                actions = buildAgentActions(stage, labels, options.portalUrl, options.portalOpenedAutomatically === true, options.externalHandoff === true, options.pendingConfirmation === true);
             } else if (isComplete) {
                 actions = [
                     { icon: 'fa-plus', label: labels.anotherProduct, message: 'I need another insurance' },
@@ -1285,6 +1764,7 @@ CHAT_HTML = '''
                 languageButton.classList.toggle('active', languageButton === button);
             });
             applyLanguage();
+            refreshComplaintProductPrompts();
         }
 
         function buildProductOptionActions(productOptions, language) {
@@ -1370,8 +1850,21 @@ CHAT_HTML = '''
                 'buy-motor-insurance': base + 'buy-Motorinsurance',
                 'personal-info': base + 'personalinfo',
                 'make-a-claim': base + 'make-a-claim',
-                'track-a-claim': base + 'Track-a-Claim'
+                'track-a-claim': 'https://mutakamela.sa/claim-center/',
+                'submit-complaint': 'https://mutakamela.sa/submit-your-complaints/'
             }[flowId] || base;
+        }
+
+        function shouldShowComplaintProductPicker(application, stage, missingFields, responseText) {
+            const text = String(responseText || '').toLocaleLowerCase();
+            const asksComplaintProduct =
+                text.includes('which insurance product is your complaint about') ||
+                text.includes('ما منتج التأمين الذي تتعلق به الشكوى');
+            return application?.flowId === 'submit-complaint' &&
+                stage === 'APP_COLLECT' &&
+                Array.isArray(missingFields) &&
+                missingFields.includes('product') &&
+                asksComplaintProduct;
         }
 
         function escapeHTML(value) {
@@ -1423,6 +1916,16 @@ CHAT_HTML = '''
             bubble.className = 'message-bubble';
             if (isUser || options.plainText) bubble.textContent = String(content);
             else bubble.innerHTML = content;
+            if (!isUser && options.complaintProductPrompt === true) {
+                bubble.dataset.complaintProductPrompt = 'true';
+                bubble.insertAdjacentHTML('beforeend', buildComplaintProductPicker());
+                attachComplaintProductPromptHandlers(bubble);
+            }
+            if (!isUser && options.complaintAttachmentPrompt === true) {
+                bubble.dataset.complaintAttachmentPrompt = 'true';
+                bubble.insertAdjacentHTML('beforeend', buildComplaintAttachmentPrompt());
+                bindComplaintAttachmentPrompt(bubble);
+            }
             if (!isUser && Array.isArray(options.productOptions)) {
                 bubble.insertAdjacentHTML('beforeend', buildProductOptionActions(options.productOptions, currentLang));
             }
@@ -1432,7 +1935,7 @@ CHAT_HTML = '''
             bubble.querySelectorAll('.callback-request-btn').forEach(button => {
                 button.addEventListener('click', () => showCallbackForm(button.dataset.productName || ''));
             });
-            if (!isUser && options.restoreActions && options.stage) {
+            if (!isUser && options.restoreActions && options.stage && !options.externalHandoff) {
                 bubble.insertAdjacentHTML('beforeend', buildStageActions(options.stage, options.isClaims, options.isComplete, currentLang, { portalUrl: options.portalUrl }));
             }
             if (!isUser && typeof options.retryMessage === 'string') {
@@ -1460,9 +1963,12 @@ CHAT_HTML = '''
                     savedMessage.stage = options.stage;
                     savedMessage.isClaims = options.isClaims === true;
                     savedMessage.isComplete = options.isComplete === true;
-                    if (typeof options.portalUrl === 'string' && /^https:\/\/eservices\.mutakamela\.sa\//.test(options.portalUrl)) savedMessage.portalUrl = options.portalUrl;
+                    if (typeof options.portalUrl === 'string' && /^https:\\/\\/eservices\\.mutakamela\\.sa\\//.test(options.portalUrl)) savedMessage.portalUrl = options.portalUrl;
                 }
                 if (!isUser && typeof options.retryMessage === 'string') savedMessage.retryMessage = options.retryMessage;
+                if (!isUser && options.complaintProductPrompt === true) savedMessage.complaintProductPrompt = true;
+                if (!isUser && options.externalHandoff === true) savedMessage.externalHandoff = true;
+                if (!isUser && options.pendingConfirmation === true) savedMessage.pendingConfirmation = true;
                 if (!isUser && Array.isArray(options.productOptions)) {
                     savedMessage.productOptions = options.productOptions
                         .filter(option => option && typeof option.name === 'string' && option.name.trim())
@@ -1476,6 +1982,47 @@ CHAT_HTML = '''
                 displayHistory = displayHistory.slice(-50);
                 saveChatHistory();
             }
+        }
+
+        function showComplaintSubmissionConfirmation(jobId, complaintNumber) {
+            if (typeof jobId !== 'string' || !/^[a-zA-Z0-9-]{1,80}$/.test(jobId)) return;
+            const key = `mutakamela_complaint_submission_${jobId}`;
+            if (sessionStorage.getItem(key)) return;
+
+            const labels = interfaceText[currentLang] || interfaceText.en;
+            const safeNumber = typeof complaintNumber === 'string' &&
+                /^[A-Za-z0-9-]{4,40}$/.test(complaintNumber)
+                ? complaintNumber
+                : '';
+            const text = [
+                labels.complaintSubmitted,
+                safeNumber ? `${labels.complaintNumberLabel}: ${safeNumber}.` : '',
+                labels.complaintNumberAdvice
+            ].filter(Boolean).join(' ');
+            sessionStorage.setItem(key, 'true');
+            addMessage(text, false, {
+                plainText: true,
+                historyText: text,
+                externalHandoff: true
+            });
+
+            // Close the complaint job on the server so the customer is free to do anything else.
+            fetch(`${apiBaseUrl}/api/applications/${encodeURIComponent(jobId)}/external-submitted?language=${currentLang}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ complaintNumber: safeNumber })
+            }).catch(error => console.warn('Could not close the complaint job:', error));
+
+            const next = labels.complaintWhatNext || '';
+            addMessage(`${escapeHTML(next)}
+                <div class="quick-replies">
+                    <button class="quick-reply" onclick="sendQuick('show me insurance products')">
+                        <i class="fas fa-shield-alt"></i> ${escapeHTML(labels.browseProducts || 'Browse products')}
+                    </button>
+                    <button class="quick-reply" onclick="startNewChat()">
+                        <i class="fas fa-redo"></i> ${escapeHTML(labels.startOverLabel || 'Start over')}
+                    </button>
+                </div>`, false, { historyText: next, isComplete: true });
         }
 
         function showTyping() {
@@ -1496,8 +2043,18 @@ CHAT_HTML = '''
         function setChatControlsDisabled(disabled) {
             document.getElementById('messageInput').disabled = disabled;
             document.querySelector('.send-btn').disabled = disabled;
+            document.querySelectorAll('.complaint-product-picker select').forEach(select => {
+                select.disabled = disabled;
+            });
             document.querySelectorAll('.category-btn, .quick-reply, .new-chat-action').forEach(button => {
-                if (button instanceof HTMLButtonElement) button.disabled = disabled;
+                if (button instanceof HTMLButtonElement) {
+                    button.disabled = disabled;
+                }
+            });
+            document.querySelectorAll('.complaint-product-picker').forEach(picker => {
+                const select = picker.querySelector('select');
+                const button = picker.querySelector('button');
+                if (button) button.disabled = disabled || !select?.value;
             });
         }
 
@@ -1572,8 +2129,62 @@ CHAT_HTML = '''
                 const responseText = (data.response || '').toLowerCase();
                 const stage = typeof data.stage === 'string' ? data.stage.toUpperCase() : '';
                 const application = data.application && typeof data.application === 'object' ? data.application : null;
+                const pendingConfirmation = typeof application?.pendingConfirmationField === 'string' && application.pendingConfirmationField.length > 0;
+                const externalSubmissionReported = application?.flowId === 'submit-complaint' &&
+                    application.outputs?.externalSubmissionReported === 'true';
+                const missingFields = application?.missingFields ?? application?.MissingFields;
+                const complaintProductPrompt = shouldShowComplaintProductPicker(
+                    application,
+                    stage,
+                    missingFields,
+                    rawResponse
+                );
+                const shouldPromptForComplaintAttachments = application?.flowId === 'submit-complaint' &&
+                    application.status === 'AwaitingApproval' &&
+                    !externalSubmissionReported &&
+                    !sessionStorage.getItem(complaintAttachmentChoiceKey(application));
+                if (application?.flowId === 'submit-complaint')
+                    pendingComplaintApplication = externalSubmissionReported ? null : application;
                 const portalUrl = application?.outputs?.payment_url || (application?.flowId ? flowPortalUrl(application.flowId) : null);
+                const portalLaunch = !externalSubmissionReported && ['AwaitingLogin', 'AwaitingApproval'].includes(application?.status)
+                    ? await openPortalForApplication(application)
+                    : null;
+                if (application && ['Done', 'Failed', 'Cancelled'].includes(application.status)) {
+                    window.postMessage({
+                        type: 'MUTAKAMELA_CANCEL_PORTAL_AUTOFILL',
+                        jobId: application.id
+                    }, window.location.origin);
+                }
                 if (application) botResponse += buildApplicationCard(application, currentLang);
+                if (portalLaunch) {
+                    const flowId = application?.flowId;
+                    let notice = portalLaunch.opened && portalLaunch.autofillReady
+                        ? (flowId === 'track-a-claim'
+                            ? interfaceText[currentLang].claimTrackingAutofilled
+                            : flowId === 'submit-complaint'
+                            ? (currentLang === 'ar'
+                                ? 'تم فتح نموذج الشكوى. سيعبئ الامتداد الحقول المدعومة؛ راجعها وأكمل أي بيانات ناقصة ثم اضغط إرسال بنفسك. لم يتم إرسال أي شيء تلقائياً.'
+                                : 'The complaint form opened in a new tab. The extension will fill supported fields; review them, complete anything missing, and click Submit yourself. Nothing was submitted automatically.')
+                            : (currentLang === 'ar'
+                                ? 'تم فتح البوابة. سجّل الدخول هناك؛ ستُعبأ الحقول المدعومة تلقائياً. راجع البيانات قبل المتابعة.'
+                                : 'The portal opened in a new tab. Log in there; supported fields will be filled automatically. Review them before continuing.'))
+                            : portalLaunch.opened
+                                ? (flowId === 'make-a-claim'
+                                    ? interfaceText[currentLang].claimFormManual
+                                    : flowId === 'track-a-claim'
+                                        ? interfaceText[currentLang].claimTrackingManual
+                                        : flowId === 'submit-complaint'
+                                    ? (currentLang === 'ar'
+                                        ? 'تم فتح نموذج الشكوى، لكن التعبئة التلقائية غير متاحة. راجع النموذج وأدخل البيانات بنفسك؛ لم يتم إرسال أي شيء.'
+                                        : 'The complaint form opened, but autofill is unavailable. Review the form and enter the details yourself; nothing was submitted.')
+                                : (currentLang === 'ar'
+                                    ? 'تم فتح البوابة، لكن التعبئة التلقائية متوقفة حتى يتم التحقق من محددات هذا النموذج.'
+                                    : 'The portal opened, but autofill is disabled until this flow’s form selectors are verified.'))
+                            : (portalLaunch.error || (currentLang === 'ar'
+                                ? 'تعذر فتح البوابة تلقائياً. استخدم رابط فتح البوابة أدناه للمتابعة.'
+                                : 'The portal could not be opened automatically. Use the portal link below to continue.'));
+                    botResponse += `<div class="app-disclaimer portal-extension-notice">${escapeHTML(notice)}</div>`;
+                }
 
                 const isComplete = stage === 'COMPLETE' ||
                                    responseText.includes('thank you for choosing');
@@ -1670,8 +2281,16 @@ CHAT_HTML = '''
                             </button>
                         </div>
                     `;
-                } else if (stage === 'PROCEED_MOTOR' || stage.startsWith('APP_')) {
-                    botResponse += buildStageActions(stage, false, false, currentLang, { portalUrl });
+                } else if ((application?.flowId !== 'submit-complaint' || pendingConfirmation) &&
+                    !shouldPromptForComplaintAttachments &&
+                    (stage === 'PROCEED_MOTOR' || stage.startsWith('APP_'))) {
+                    botResponse += buildStageActions(stage, false, false, currentLang, {
+                        portalUrl,
+                        portalOpenedAutomatically: portalLaunch?.opened === true,
+                        externalHandoff: ['submit-complaint', 'make-a-claim', 'track-a-claim']
+                            .includes(application?.flowId),
+                        pendingConfirmation
+                    });
                 } else if (isComplete) {
                     botResponse += `
                         <div class="quick-replies">
@@ -1699,6 +2318,10 @@ CHAT_HTML = '''
                     isClaims,
                     isComplete,
                     portalUrl,
+                    pendingConfirmation,
+                    complaintProductPrompt,
+                    complaintAttachmentPrompt: shouldPromptForComplaintAttachments,
+                    externalHandoff: application?.flowId === 'submit-complaint',
                     productOptions: Array.isArray(productOptions) ? productOptions : []
                 });
                 saveChatHistory();
@@ -1759,10 +2382,28 @@ CHAT_HTML = '''
         }
 
         async function startNewChat() {
-            if (messageInFlight) return;
+            if (messageInFlight || attachmentTransferInFlight) return;
             messageInFlight = true;
             setChatControlsDisabled(true);
             try {
+                if (activeComplaintJobId) {
+                    window.postMessage({
+                        type: 'MUTAKAMELA_CANCEL_PORTAL_AUTOFILL',
+                        jobId: activeComplaintJobId
+                    }, window.location.origin);
+                    sessionStorage.removeItem('mutakamela_active_complaint_job');
+                    activeComplaintJobId = '';
+                }
+                if (pendingComplaintApplication) {
+                    sessionStorage.removeItem(complaintAttachmentChoiceKey(pendingComplaintApplication));
+                    pendingComplaintApplication = null;
+                }
+                for (let index = sessionStorage.length - 1; index >= 0; index--) {
+                    const key = sessionStorage.key(index);
+                    if (key?.startsWith('mutakamela_complaint_attachment_choice_')) {
+                        sessionStorage.removeItem(key);
+                    }
+                }
                 try {
                     await fetch(`${apiBaseUrl}/api/chat/${encodeURIComponent(sessionId)}`, { method: 'DELETE' });
                 } catch (e) {}
@@ -1770,6 +2411,9 @@ CHAT_HTML = '''
                 localStorage.removeItem('mutakamela_chat_' + sessionId);
                 conversationHistory = [];
                 displayHistory = [];
+                complaintAttachments.splice(0, complaintAttachments.length);
+                complaintHandoffMessage = '';
+                refreshComplaintAttachmentPrompts();
                 sessionId = createSessionId();
                 localStorage.setItem('mutakamela_session', sessionId);
 

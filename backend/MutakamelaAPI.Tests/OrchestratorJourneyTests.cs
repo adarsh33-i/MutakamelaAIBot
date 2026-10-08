@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using MutakamelaAPI.Applications;
 using MutakamelaAPI.Browser;
 using MutakamelaAPI.Models;
+using MutakamelaAPI.Rules;
 using MutakamelaAPI.Services;
 using Xunit;
 
@@ -28,7 +29,7 @@ public class OrchestratorJourneyTests : IDisposable
     }
 
     [Fact]
-    public async Task Track_a_claim_collects_validates_waits_for_login_then_reads_status()
+    public async Task Track_a_claim_prefills_claim_number_and_leaves_lookup_to_customer()
     {
         var s = "track";
         var r = await _ai.Say(s, "I want to track my claim");
@@ -43,64 +44,127 @@ public class OrchestratorJourneyTests : IDisposable
         Assert.DoesNotContain("claim_number", r.Application!.Data.Keys);
 
         r = await _ai.Say(s, "CLM-2024-00123");
-        Assert.Equal("CLM-2024-00123", r.Application!.Data["claim_number"]);
+        Assert.Equal("APP_REVIEW", r.Stage);
+        Assert.Equal(JobStatus.AwaitingApproval, r.Application!.Status);
+        Assert.Equal("CLM-2024-00123", r.Application.Data["claim_number"]);
+        Assert.Contains("Track Status yourself", r.Response);
+        Assert.Contains("has not sent a lookup", r.Response);
+        Assert.DoesNotContain("national_id", r.Application.Data.Keys);
 
-        r = await _ai.Say(s, "3098765432");
-        Assert.Equal("APP_COLLECT", r.Stage);
-
-        r = await _ai.Say(s, "1098765432");
-        Assert.Equal("APP_LOGIN", r.Stage);
-        Assert.Equal(JobStatus.AwaitingLogin, r.Application!.Status);
-
-        r = await _ai.Say(s, "what's the weather");
-        Assert.Equal("APP_LOGIN", r.Stage);
-
-        r = await _ai.Say(s, "logged in");
-        Assert.Equal("APP_DONE", r.Stage);
-        Assert.Equal(JobStatus.Done, r.Application!.Status);
-        Assert.True(r.Application.Outputs.ContainsKey("claim_status"));
-        Assert.Contains(r.Application.Events, e => e.Type == "screenshot");
+        var flow = _sp.GetRequiredService<IFlowRegistry>().Get(FlowIds.TrackAClaim)!;
+        Assert.True(flow.Verified);
+        Assert.True(flow.ExternalHandoff);
+        Assert.False(flow.RequiresLogin);
+        Assert.Equal("https://mutakamela.sa/claim-center/", flow.Url);
+        Assert.Contains(flow.AllFields, field =>
+            field.Id == "claim_number" &&
+            field.Selectors.Contains("#form-field-field1_05bd650"));
+        Assert.Equal(FlowIds.TrackAClaim, PortalIntent.Detect("Track claim status"));
     }
 
     [Fact]
-    public async Task Make_a_claim_requires_explicit_approval_supports_edit_and_never_submits_twice()
+    public async Task Track_claim_status_is_labeled_as_customer_reported_not_portal_verified()
+    {
+        const string session = "track-reported-status";
+        await _ai.Say(session, "Track my claim");
+        await _ai.Say(session, "CLM-2026-001");
+
+        var r = await _ai.Say(session, "The portal says status: Under review");
+
+        Assert.Equal("APP_DONE", r.Stage);
+        Assert.Equal(JobStatus.Done, r.Application!.Status);
+        Assert.Equal("under review", r.Application.Outputs["customerReportedStatus"]);
+        Assert.Contains("did not retrieve or independently verify it", r.Response);
+    }
+
+    [Fact]
+    public async Task Make_a_claim_opens_the_live_entry_gate_without_collecting_identity_or_consent()
     {
         var s = "claim";
         var r = await _ai.Say(s, "I want to file a claim");
         Assert.Equal(FlowIds.MakeAClaim, r.Application!.FlowId);
-
-        foreach (var answer in new[] { "POL-998877", "2098765432", "NJM-556677" })
-            await _ai.Say(s, answer);
-
-        r = await _ai.Say(s, "2099-01-01");
-        Assert.DoesNotContain("accident_date", r.Application!.Data.Keys);
-
-        foreach (var answer in new[] { "2026-09-20", "Riyadh, King Fahd Road", "ABC 1234", "yes" })
-            await _ai.Say(s, answer);
-        r = await _ai.Say(s, "Rear bumper damaged in a low-speed collision");
-        Assert.Equal("APP_LOGIN", r.Stage);
-
-        r = await _ai.Say(s, "logged in");
         Assert.Equal("APP_REVIEW", r.Stage);
         Assert.Equal(JobStatus.AwaitingApproval, r.Application!.Status);
-        Assert.Contains("NOT submitted", r.Response);
+        Assert.Empty(r.Application.Data);
+        Assert.Contains("authorization", r.Response);
+        Assert.Contains("submit them yourself", r.Response);
+        Assert.Equal(FlowIds.MakeAClaim, PortalIntent.Detect("file a claim"));
 
-        r = await _ai.Say(s, "random chatter");
-        Assert.Equal(JobStatus.AwaitingApproval, r.Application!.Status);
-
-        r = await _ai.Say(s, "edit location");
-        Assert.Equal(JobStatus.Collecting, r.Application!.Status);
-        r = await _ai.Say(s, "Jeddah, Corniche");
-        Assert.Equal("Jeddah, Corniche", r.Application!.Data["accident_location"]);
-        Assert.Equal("APP_REVIEW", r.Stage);
+        var flow = _sp.GetRequiredService<IFlowRegistry>().Get(FlowIds.MakeAClaim)!;
+        Assert.True(flow.ExternalHandoff);
+        Assert.False(flow.Verified);
+        Assert.False(flow.RequiresLogin);
+        Assert.Equal("https://eservices.mutakamela.sa/myInsurance/make-a-claim", flow.Url);
+        Assert.Empty(flow.AllFields);
 
         r = await _ai.Say(s, "confirm");
-        Assert.Equal(JobStatus.Done, r.Application!.Status);
-        Assert.False(string.IsNullOrEmpty(r.Application.ReferenceNumber));
+        Assert.Equal(JobStatus.AwaitingApproval, r.Application!.Status);
+        Assert.DoesNotContain(r.Application.Events, e => e.Message.Contains("Clicking submit"));
+    }
+
+    [Fact]
+    public async Task Complaint_handoff_opens_only_after_validation_and_never_submits_from_chat()
+    {
+        var flow = _sp.GetRequiredService<IFlowRegistry>().Get(FlowIds.SubmitComplaint)!;
+        Assert.True(flow.Verified);
+        Assert.True(flow.ExternalHandoff);
+        Assert.Equal("https://mutakamela.sa/submit-your-complaints/", flow.Url);
+        Assert.Equal(FlowIds.SubmitComplaint, PortalIntent.Detect("أريد تقديم شكوى"));
+        Assert.Null(_sp.GetRequiredService<IRulesEngine>()
+            .Validate(flow.FindField("city")!, "Northern Province", out var normalizedCity));
+        Assert.Equal("northen province", normalizedCity);
+        Assert.Contains(flow.AllFields, field =>
+            field.Id == "product" && field.Type == "select" &&
+            field.Selectors.Contains("#form-field-field_e732973"));
+
+        const string session = "complaint";
+        var r = await _ai.Say(session, "I want to submit a complaint");
+        Assert.Equal(FlowIds.SubmitComplaint, r.Application!.FlowId);
+        Assert.Equal("full_name", r.Application.MissingFields[0]);
+
+        foreach (var answer in new[]
+        {
+            "Maha Al Saud", "1234567890", "0551234567", "Jeddah",
+            "maha@example.com", "MIP", "A delayed response to my policy cancellation request"
+        })
+            r = await _ai.Say(session, answer);
+
+        Assert.Equal("APP_REVIEW", r.Stage);
+        Assert.Equal(JobStatus.AwaitingApproval, r.Application!.Status);
+        Assert.Equal("jeddah", r.Application.Data["city"]);
+        Assert.Equal("MIP", r.Application.Data["product"]);
+        Assert.Null(r.Application.ReferenceNumber);
+        Assert.Contains("click Submit there", r.Response);
+        Assert.Contains("Nothing was submitted", r.Application.Review!.Disclaimer);
+        Assert.Contains(r.Application.Review.Lines, line => line.Field == "product" && line.Value == "MIP");
 
         var orchestrator = _sp.GetRequiredService<IApplicationOrchestrator>();
-        var again = await orchestrator.ApproveAsync(r.Application.Id, "en");
-        Assert.Equal(1, again!.Events.Count(e => e.Message.Contains("Clicking submit")));
+        var apiApproval = await orchestrator.ApproveAsync(r.Application.Id, "en");
+        Assert.Equal(JobStatus.AwaitingApproval, apiApproval!.Status);
+
+        r = await _ai.Say(session, "confirm");
+        Assert.Equal(JobStatus.AwaitingApproval, r.Application!.Status);
+        Assert.DoesNotContain(r.Application.Events, e => e.Message.Contains("Clicking submit"));
+        Assert.DoesNotContain((await orchestrator.GetAsync(r.Application.Id))!.Events, e => e.Message.Contains("Submitting →"));
+
+        r = await _ai.Say(session, "i submitted 2600044565 this is a complaint no");
+        Assert.Equal(JobStatus.Done, r.Application!.Status);
+        Assert.Equal("APP_DONE", r.Stage);
+        Assert.Equal("true", r.Application.Outputs["externalSubmissionReported"]);
+        Assert.Equal("2600044565", r.Application.Outputs["complaintNumber"]);
+        Assert.Equal("2600044565", r.Application.ReferenceNumber);
+        Assert.Contains("Complaint number: 2600044565", r.Response);
+        Assert.Contains("now closed", r.Response);
+
+        // The job is closed: the customer is free to do anything else.
+        r = await _ai.Say(session, "show me travel insurance");
+        Assert.Null(r.Application);
+        Assert.DoesNotContain("complaint", r.Response, StringComparison.OrdinalIgnoreCase);
+
+        // And can start a brand-new complaint if they want.
+        r = await _ai.Say(session, "I want to file another complaint");
+        Assert.Equal(FlowIds.SubmitComplaint, r.Application!.FlowId);
+        Assert.Equal(JobStatus.Collecting, r.Application.Status);
     }
 
     [Fact]
@@ -145,16 +209,16 @@ public class OrchestratorJourneyTests : IDisposable
     }
 
     [Fact]
-    public async Task Profile_values_carry_over_between_jobs_in_a_session()
+    public async Task Track_claim_only_requests_claim_number_and_keeps_identity_entry_on_portal()
     {
         var s = "carry";
-        await _ai.Say(s, "track my claim");
-        await _ai.Say(s, "CLM-1");
-        await _ai.Say(s, "1098765432");
-        await _ai.Say(s, "logged in"); // completes the read-only job
-        var r = await _ai.Say(s, "I want to buy car insurance");
-        Assert.Equal(FlowIds.BuyMotorInsurance, r.Application!.FlowId);
-        Assert.Equal("1098765432", r.Application.Data["national_id"]);
+        var r = await _ai.Say(s, "track my claim");
+        Assert.Equal(FlowIds.TrackAClaim, r.Application!.FlowId);
+        Assert.Equal("claim_number", r.Application.MissingFields.Single());
+        r = await _ai.Say(s, "CLM-1");
+        Assert.Equal(JobStatus.AwaitingApproval, r.Application!.Status);
+        Assert.DoesNotContain("national_id", r.Application.Data.Keys);
+        Assert.Contains("Enter your ID/Iqama/CR yourself", r.Response);
     }
 
     [Fact]
@@ -172,19 +236,22 @@ public class OrchestratorJourneyTests : IDisposable
     public async Task Jobs_survive_a_restart_and_the_conversation_continues()
     {
         var s = "restart";
-        await _ai.Say(s, "I want to file a claim");
-        var r = await _ai.Say(s, "POL-123456");
+        await _ai.Say(s, "update my personal details");
+        await _ai.Say(s, "Maha Al Saud");
+        await _ai.Say(s, "0551234567");
+        var r = await _ai.Say(s, "maha@example.com");
         var jobId = r.Application!.Id;
 
         using var sp2 = _fixture.BuildProvider(); // same data dir, fresh container
         var reloaded = await sp2.GetRequiredService<IApplicationOrchestrator>().GetAsync(jobId);
         Assert.NotNull(reloaded);
-        Assert.Equal("POL-123456", reloaded!.Data["policy_number"]);
-        Assert.Equal(JobStatus.Collecting, reloaded.Status);
+        Assert.Equal("0551234567", reloaded!.Data["mobile"]);
+        Assert.Equal("maha@example.com", reloaded.Data["email"]);
+        Assert.Equal(JobStatus.AwaitingLogin, reloaded.Status);
 
-        var cont = await sp2.GetRequiredService<IAIPolicyService>().Say(s, "1012345678");
+        var cont = await sp2.GetRequiredService<IAIPolicyService>().Say(s, "logged in");
         Assert.Equal(jobId, cont.Application!.Id);
-        Assert.True(cont.Application.Data.ContainsKey("national_id"));
+        Assert.Equal("APP_OTP", cont.Stage);
     }
 
     [Fact]
@@ -210,7 +277,7 @@ public class OrchestratorJourneyTests : IDisposable
     public async Task Playwright_agent_refuses_unverified_flows()
     {
         var agent = new PlaywrightBrowserAgent(NullLogger<PlaywrightBrowserAgent>.Instance);
-        var flow = _sp.GetRequiredService<IFlowRegistry>().Get(FlowIds.TrackAClaim)!;
+        var flow = _sp.GetRequiredService<IFlowRegistry>().Get(FlowIds.MakeAClaim)!;
         Assert.False(flow.Verified);
         var result = await agent.RunAsync(flow, new ApplicationJob { Id = "x", LoginCompletedAt = DateTime.UtcNow }, _ => Task.CompletedTask, default);
         Assert.False(result.Succeeded);
@@ -230,12 +297,11 @@ public class RoadsideAssistanceTests : IDisposable
     [InlineData("my car broke down on the highway")]
     [InlineData("need a tow truck")]
     [InlineData("تعطلت سيارتي")]
-    public async Task Breakdown_messages_resolve_to_motor_roadside_assistance_without_the_llm(string message)
+    public async Task Breakdown_messages_resolve_to_motor_via_retrieval(string message)
     {
+        // The LLM is unreachable in tests; the RAG fallback must still ground the answer in Motor.
         var r = await _sp.GetRequiredService<IAIPolicyService>().Say("rsa", message);
         Assert.Equal("IND-MOT-001", r.SelectedProduct?.Id);
-        Assert.Contains("roadside assistance", r.Response);
-        Assert.Contains("المساعدة على الطريق", r.ResponseAr);
     }
 
     [Fact]
@@ -244,6 +310,16 @@ public class RoadsideAssistanceTests : IDisposable
         // Falls through to the LLM path, which is unreachable in tests -> generic fallback, not motor.
         var r = await _sp.GetRequiredService<IAIPolicyService>().Say("rsa2", "stuck at the airport, flight cancelled");
         Assert.NotEqual("IND-MOT-001", r.SelectedProduct?.Id);
+    }
+
+    [Fact]
+    public async Task Motor_quick_option_returns_catalog_details_instead_of_sales_handoff()
+    {
+        var r = await _sp.GetRequiredService<IAIPolicyService>().Say("motor-quick-option", "Motor Insurance");
+        Assert.Equal("DETAILS", r.Stage);
+        Assert.Equal("IND-MOT-001", r.SelectedProduct?.Id);
+        Assert.Contains(r.ProductDetails!.Coverage, item => item.Contains("Third Party Liability"));
+        Assert.DoesNotContain("quote requests", r.Response, StringComparison.OrdinalIgnoreCase);
     }
 }
 

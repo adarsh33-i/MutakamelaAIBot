@@ -1,0 +1,81 @@
+{"q": "i got stuck in forest", "expect": "IND-MOT-001"}
+{"q": "my car broke down on the highway", "expect": "IND-MOT-001"}
+{"q": "need a tow truck", "expect": "IND-MOT-001"}
+{"q": "someone hit my camry in the parking", "expect": "IND-MOT-001"}
+{"q": "renew my car insurance", "expect": "IND-MOT-001"}
+{"q": "تعطلت سيارتي", "expect": "IND-MOT-001"}
+{"q": "ابغى تأمين ضد الغير", "expect": "IND-MOT-001"}
+{"q": "صدمت سيارة ثانية وش اسوي", "expect": "IND-MOT-001"}
+{"q": "going to london for vacation next week", "expect": "IND-TRV-001"}
+{"q": "my flight got cancelled", "expect": "IND-TRV-001"}
+{"q": "lost my luggage at the airport", "expect": "IND-TRV-001"}
+{"q": "family trip to turkey with kids", "expect": "IND-TRV-001"}
+{"q": "تأمين سفر للعائلة", "expect": "IND-TRV-001"}
+{"q": "ضاعت شنطتي في المطار", "expect": "IND-TRV-001"}
+{"q": "i need insurance for schengen visa", "expect": "IND-TRV-002"}
+{"q": "embassy asked for travel insurance certificate", "expect": "IND-TRV-002"}
+{"q": "my cousin is visiting saudi on a visit visa", "expect": "IND-TRV-002"}
+{"q": "تأمين تأشيرة شنغن", "expect": "IND-TRV-002"}
+{"q": "Visit Visa Travel Insurance", "expect": "IND-TRV-002"}
+{"q": "want to save for my daughter's university", "expect": "IND-SAV-001"}
+{"q": "education plan for my kids", "expect": "IND-SAV-001"}
+{"q": "ادخار لتعليم اولادي", "expect": "IND-SAV-001"}
+{"q": "planning for retirement income", "expect": "IND-SAV-002"}
+{"q": "pension plan", "expect": "IND-SAV-002"}
+{"q": "ادخار للتقاعد", "expect": "IND-SAV-002"}
+{"q": "if something happens to me my family should be protected", "expect": "IND-PRO-001"}
+{"q": "life insurance for breadwinner", "expect": "IND-PRO-001"}
+{"q": "تأمين على الحياة لحماية عائلتي", "expect": "IND-PRO-001"}
+{"q": "medical insurance for my 200 employees", "expect": "CORP-HLT-001"}
+{"q": "CCHI compliant health cover for staff", "expect": "CORP-HLT-001"}
+{"q": "تأمين طبي لموظفين الشركة", "expect": "CORP-HLT-001"}
+{"q": "health insurance for my small shop with 6 workers", "expect": "CORP-HLT-002"}
+{"q": "startup medical insurance for small team", "expect": "CORP-HLT-002"}
+{"q": "worker fell and got injured at the warehouse", "expect": "CORP-HLT-003"}
+{"q": "accident cover for our employees 24 hours", "expect": "CORP-HLT-003"}
+{"q": "إصابة موظف في العمل", "expect": "CORP-HLT-003"}
+{"q": "group life cover for employees", "expect": "CORP-HLT-004"}
+{"q": "death benefit for staff families", "expect": "CORP-HLT-004"}
+{"q": "shipping a container from china to jeddah", "expect": "CORP-MAR-001"}
+{"q": "my imported goods were damaged at sea", "expect": "CORP-MAR-001"}
+{"q": "شحن بضائع من الصين", "expect": "CORP-MAR-001"}
+{"q": "insure my yacht", "expect": "CORP-MAR-002"}
+{"q": "fishing boat hull damage", "expect": "CORP-MAR-002"}
+{"q": "goods damaged while being trucked from riyadh to dammam", "expect": "CORP-MAR-003"}
+{"q": "نقل بضائع بالشاحنات داخل المملكة", "expect": "CORP-MAR-003"}
+{"q": "my shop got flooded", "expect": "CORP-PRP-001"}
+{"q": "fire in our warehouse last night", "expect": "CORP-PRP-001"}
+{"q": "office was burgled", "expect": "CORP-PRP-001"}
+{"q": "غرق محلي بسبب الامطار", "expect": "CORP-PRP-001"}
+{"q": "a customer slipped in my restaurant and wants compensation", "expect": "CORP-LIA-001"}
+{"q": "liability insurance for an event with 500 guests", "expect": "CORP-LIA-001"}
+{"q": "زبون انزلق في المحل ويطالب بتعويض", "expect": "CORP-LIA-001"}
+{"q": "protect our board members from lawsuits", "expect": "CORP-LIA-002"}
+{"q": "directors and officers cover", "expect": "CORP-LIA-002"}
+{"q": "our product injured a customer and we may be sued", "expect": "CORP-LIA-003"}
+{"q": "product recall insurance", "expect": "CORP-LIA-003"}
+{"q": "client is suing our consultancy for wrong advice", "expect": "CORP-LIA-004"}
+{"q": "professional indemnity for engineers", "expect": "CORP-LIA-004"}
+{"q": "خطأ مهني ودعوى من العميل", "expect": "CORP-LIA-004"}
+{"q": "we are running a drug trial with volunteers", "expect": "CORP-LIA-005"}
+{"q": "clinical trials cover", "expect": "CORP-LIA-005"}
+{"q": "building a villa, contractor wants insurance", "expect": "CORP-ENG-001"}
+{"q": "construction site all risks", "expect": "CORP-ENG-001"}
+{"q": "تأمين مشروع بناء", "expect": "CORP-ENG-001"}
+{"q": "installing a new production plant", "expect": "CORP-ENG-002"}
+{"q": "erection of steel structure insurance", "expect": "CORP-ENG-002"}
+{"q": "our generator stopped working suddenly", "expect": "CORP-ENG-003"}
+{"q": "production line mechanical failure", "expect": "CORP-ENG-003"}
+{"q": "توقفت الآلة في المصنع", "expect": "CORP-ENG-003"}
+{"q": "power surge damaged our servers", "expect": "CORP-ENG-004"}
+{"q": "insurance for office computers and data center", "expect": "CORP-ENG-004"}
+{"q": "our excavator was stolen from the site", "expect": "CORP-ENG-005"}
+{"q": "crane insurance", "expect": "CORP-ENG-005"}
+{"q": "steam boiler exploded", "expect": "CORP-ENG-006"}
+{"q": "pressure vessel cover", "expect": "CORP-ENG-006"}
+{"q": "customer did not pay our invoices and went bankrupt", "expect": "CORP-CRD-001"}
+{"q": "bad debt protection for exports", "expect": "CORP-CRD-001"}
+{"q": "العميل ما سدد الفواتير", "expect": "CORP-CRD-001"}
+{"q": "employee embezzled money from the company", "expect": "CORP-PEC-001"}
+{"q": "cash in transit insurance", "expect": "CORP-PEC-001"}
+{"q": "موظف سرق فلوس من الخزنة", "expect": "CORP-PEC-001"}
